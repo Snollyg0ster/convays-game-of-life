@@ -1,0 +1,11 @@
+export const START_TEXT = "Старт 🚀";
+export const STOP_TEXT = "Стоп ⛔️";
+export const CLEAR_TEXT = "Очистить ⌫";
+export const NEXT_FRAME_TEXT = "Далее ⏭️";
+export const SPEED_TEXT = "Скорость";
+export const EXAMPLE_TEXT = "Пример 🪄";
+export const BACKGROUND_COLOR_TEXT = "Цвет фона";
+export const CELL_COLOR_TEXT = "Цвет клеток";
+export const RANDOM_TEXT = "Случайно заполнить 🎲";
+export const DENCITY_TEXT = "Плотность заполнения";
+export const GRID_TEXT = "Рисовать сетку";
