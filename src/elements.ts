@@ -2,6 +2,7 @@ import { START_TEXT, STOP_TEXT, SPEED_TEXT } from "./consts";
 import { cfg } from "./config";
 import { trackMouse } from "./dom";
 import { ColorFields, NumberFields, NumberInputProps } from "./types";
+import { assertEventTarget } from "./utils";
 
 export const createCanvas = () => {
   const canvas = document.createElement("canvas");
@@ -53,7 +54,7 @@ export const createGameButton = (cb: () => () => void, isRuning = false) => {
     if (isRuning) {
       stopGame = cb();
     } else {
-      stopGame && stopGame();
+      stopGame?.();
     }
   };
 
@@ -83,6 +84,7 @@ export const createGameSpeedSlider = (min = 1, max = 1000, normal = 100) => {
   cont.append(label, input);
 
   input.oninput = (e) => {
+    assertEventTarget(e, HTMLInputElement);
     const speed = +e.target.value;
     cfg.gameDeltaTime = speed;
     const precision = speed > 100 ? 1 : speed < 10 ? 3 : 2;
@@ -108,13 +110,18 @@ export const createNumberInput = (
   input.type = "number";
   cont.append(label, input);
 
+  cfg.observe(field, (val) => {
+    input.value = `${val}`;
+  });
+
   input.oninput = (e) => {
+    assertEventTarget(e, HTMLInputElement);
     const num = float
       ? parseFloat(e.target.value)
       : ~~parseFloat(e.target.value);
     const val = num < min ? min : num > max ? max : num;
     cfg[field] = val;
-    cb && cb(val);
+    cb?.(val);
   };
 
   return cont;
@@ -123,7 +130,7 @@ export const createNumberInput = (
 export const createColorInput = (
   title: string,
   field: ColorFields,
-  cb?: (val: number) => void
+  cb?: (val: string) => void
 ) => {
   const cont = document.createElement("div");
   const label = document.createElement("label");
@@ -135,9 +142,10 @@ export const createColorInput = (
   cont.append(label, input);
 
   input.oninput = (e) => {
+    assertEventTarget(e, HTMLInputElement);
     const color = e.target.value;
     cfg[field] = color;
-    cb && cb(color);
+    cb?.(color);
   };
 
   return cont;
@@ -152,13 +160,13 @@ export const createCheckbox = (
   const label = document.createElement("label");
   label.textContent = title;
   const input = document.createElement("input");
-  cfg[field] && input.setAttribute("checked", true);
+  cfg[field] && input.setAttribute("checked", "");
   input.type = "checkbox";
   cont.append(label, input);
 
   input.onclick = () => {
     cfg[field] = !cfg[field];
-    cb && cb();
+    cb?.();
   };
 
   return cont;

@@ -31,3 +31,5 @@ type KeysMatching<T, V> = {
 export type PickKeysOfType<V, T> = {
   [key in keyof V]-?: V[key] extends T ? key : never;
 }[keyof V];
+
+// const jd: KeysMatching<NumberInputProps, number> = ''

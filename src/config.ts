@@ -1,5 +1,7 @@
+import { Observed, observe } from "./decorator";
 import { Cell } from "./types";
 
+@observe
 class Config {
   cellSize = 10;
   horCount = 120;
@@ -42,4 +44,4 @@ class Config {
   }
 }
 
-export const cfg = new Config();
+export const cfg = new Config() as Observed<Config>;

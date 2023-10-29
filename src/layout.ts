@@ -94,7 +94,7 @@ colorCont.append(backgroundColor, cellColor);
 const randomlyFillField = () => {
   const dencity = cfg.dencityOfRandomFill;
   const randomField = cfg.initField;
-  console.log("dencity", dencity);
+  
   cfg.field = randomField
     .map((row) => row.fill(false))
     .map((row) => row.map(() => Math.random() < dencity));

@@ -8,8 +8,7 @@
     "build": "node ./build.js"
   },
   "devDependencies": {
-    "esbuild": "0.19.5",
-    "parcel-bundler": "^1.6.1"
+    "esbuild": "0.19.5"
   },
   "keywords": []
 }
