@@ -1,0 +1,21 @@
+/* src/style.css */
+body {
+}
+#root {
+  display: flex;
+  gap: 30px;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+.buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.col {
+  display: flex;
+  flex-direction: column;
+}
