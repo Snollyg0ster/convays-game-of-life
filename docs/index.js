@@ -253,7 +253,6 @@
     const { min = 1, max = 1e3, float = false } = props;
     const cont = document.createElement("div");
     const label = document.createElement("label");
-    label.textContent = title;
     cont.classList.add("col");
     const input = document.createElement("input");
     input.setAttribute("value", `${cfg[field]}`);

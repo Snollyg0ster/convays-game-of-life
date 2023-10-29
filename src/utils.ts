@@ -10,3 +10,5 @@ export function assertEventTarget<Element extends Function>(
 
   throw Error(`Target is not instance of ${element}`);
 };
+
+export const doNothing = <T = any>() => (val: string) => val as T;

@@ -1,8 +1,8 @@
 import { START_TEXT, STOP_TEXT, SPEED_TEXT } from "./consts";
-import { cfg } from "./config";
+import Config, { cfg } from "./config";
 import { trackMouse } from "./dom";
-import { ColorFields, NumberFields, NumberInputProps } from "./types";
-import { assertEventTarget } from "./utils";
+import { ColorFields, InputProps, NumberFields, NumberInputProps } from "./types";
+import { assertEventTarget, doNothing } from "./utils";
 
 export const createCanvas = () => {
   const canvas = document.createElement("canvas");
@@ -103,7 +103,6 @@ export const createNumberInput = (
   const { min = 1, max = 1000, float = false } = props;
   const cont = document.createElement("div");
   const label = document.createElement("label");
-  label.textContent = title;
   cont.classList.add("col");
   const input = document.createElement("input");
   input.setAttribute("value", `${cfg[field]}`);
@@ -122,6 +121,42 @@ export const createNumberInput = (
     const val = num < min ? min : num > max ? max : num;
     cfg[field] = val;
     cb?.(val);
+  };
+
+  return cont;
+};
+
+type ConfigKeys = Exclude<keyof InstanceType<typeof Config>, 'resetField' | 'observe' | 'unsubscribe'>
+
+export const createInput = <K extends ConfigKeys>(
+  title: string,
+  field: K,
+  props: InputProps<Config[K]>
+) => {
+  const { type, attrs = {}, format, labelClass, inputClass, contClass, onChange } = props;
+  const cont = document.createElement("div");
+  const label = document.createElement("label");
+  const input = document.createElement("input");
+
+  labelClass && label.classList.add(labelClass)
+  inputClass && input.classList.add(inputClass)
+  cont.classList.add("col", contClass || '');
+  input.setAttribute("value", `${cfg[field]}`);
+  type && (input.type = type);
+  label.textContent = title;
+  cont.append(label, input);
+
+  Object.entries(attrs).forEach((attr) => input.setAttribute(...attr))
+
+  cfg.observe(field, (val) => {
+    input.value = `${val}`;
+  });
+
+  input.oninput = (e) => {
+    assertEventTarget(e, HTMLInputElement);
+    const val = format?.(e.target.value) || e.target.value; //@ts-ignore
+    cfg[field] = val;
+    onChange?.(e.target.value);
   };
 
   return cont;

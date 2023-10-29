@@ -45,3 +45,4 @@ class Config {
 }
 
 export const cfg = new Config() as Observed<Config>;
+export default Config;
