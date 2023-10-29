@@ -87,9 +87,12 @@ const backgroundColor = createColorInput(
 const cellColor = createColorInput(CELL_COLOR_TEXT, "cellColor", () =>
   drawCells(ctx, cfg.field)
 );
+const gridColor = createColorInput(CELL_COLOR_TEXT, "gridColor", () =>
+  drawCells(ctx, cfg.field)
+);
 const colorCont = document.createElement("div");
 colorCont.classList.add("row");
-colorCont.append(backgroundColor, cellColor);
+colorCont.append(backgroundColor, cellColor, gridColor);
 
 const randomlyFillField = () => {
   const dencity = cfg.dencityOfRandomFill;

@@ -10,7 +10,7 @@ class Config {
   backgroundColor = "black";
   cellColor = "#ffffff";
   cursorColor = "#aa0000";
-  gridColor = "gray";
+  gridColor = "#808080";
   drawGrid = true;
   gridWidth = 1;
   dencityOfRandomFill = 0.5;

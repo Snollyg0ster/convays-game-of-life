@@ -58,7 +58,7 @@
     backgroundColor = "black";
     cellColor = "#ffffff";
     cursorColor = "#aa0000";
-    gridColor = "gray";
+    gridColor = "#808080";
     drawGrid = true;
     gridWidth = 1;
     dencityOfRandomFill = 0.5;
@@ -3029,9 +3029,14 @@
     "cellColor",
     () => drawCells(ctx, cfg.field)
   );
+  var gridColor = createColorInput(
+    CELL_COLOR_TEXT,
+    "gridColor",
+    () => drawCells(ctx, cfg.field)
+  );
   var colorCont = document.createElement("div");
   colorCont.classList.add("row");
-  colorCont.append(backgroundColor, cellColor);
+  colorCont.append(backgroundColor, cellColor, gridColor);
   var randomlyFillField = () => {
     const dencity = cfg.dencityOfRandomFill;
     const randomField = cfg.initField;
