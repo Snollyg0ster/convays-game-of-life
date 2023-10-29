@@ -2,8 +2,8 @@ const http = require('http');
 const url = require('url');
 const fs = require('fs');
 const path = require('path');
+const config = require('./config');
 
-const outPath = './dist'
 const port = process.argv[2] || 8000;
 
 http.createServer(function (req, res) {
@@ -12,7 +12,7 @@ http.createServer(function (req, res) {
   // parse URL
   const parsedUrl = url.parse(req.url);
   // extract URL path
-  let pathname = outPath + parsedUrl.pathname;
+  let pathname = config.outDir + parsedUrl.pathname;
   // based on the URL path, extract the file extension. e.g. .js, .doc, ...
   const ext = path.parse(pathname).ext || '.html';
   console.log('pathname', pathname, ext)

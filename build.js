@@ -1,15 +1,17 @@
 const esbuild = require("esbuild");
 const fs = require("fs/promises");
+const path = require("path");
+const config = require('./config');
 
 const copyStatic = async () => {
-  return await fs.cp("./static", "./dist", { recursive: true, force: true });
+  return await fs.cp("./static", config.outDir, { recursive: true, force: true });
 };
 
 const build = () =>
   esbuild.build({
     entryPoints: ["./src/index.ts"],
     bundle: true,
-    outfile: "./dist/index.js",
+    outfile: path.join(config.outDir, "index.js"),
   });
 
 (async () => {
