@@ -1,10 +1,11 @@
 export type Cell = boolean;
 
 export type NumberFields =
+  | "speed"
   | "cellSize"
   | "horCount"
   | "verCount"
-  | "gameDeltaTime"
+  | "interval"
   | "dencityOfRandomFill";
 
 export type ColorFields =
@@ -18,24 +19,34 @@ export interface Coord {
   y: number;
 }
 
+export interface InputElements {
+  cont: HTMLDivElement;
+  label: HTMLLabelElement;
+  input: HTMLInputElement;
+}
+
+export interface InputProps<T>  {
+  type?: string;
+  hor?: boolean;
+  attrs?: Record<string, any>
+  labelClass?: string;
+  inputClass?: string;
+  contClass?: string;
+  onChange?: (val: string, props: InputProps<T> & InputElements) => void;
+  format?: (val: T) => string;
+  parse?: (val: string) => T;
+}
+
+export interface InputPropsStrictParse<T> extends Omit<InputProps<T>, 'parse'> {
+  parse: (val: string) => T;
+}
+
 export interface NumberInputProps {
   min?: number;
   max?: number;
   float?: boolean;
+  onChange?: (val: string, props?: InputProps<number> & InputElements) => void;
 }
-
-export type InputProps<T> = {
-  type?: string;
-  attrs?: Record<string, string>
-  labelClass?: string;
-  inputClass?: string;
-  contClass?: string;
-  onChange?: (val: string) => void;
-} & (T extends string ? {
-  format?: (val: string) => T;
-} : {
-  format: (val: string) => T;
-})
 
 //TODO понять почему не работает
 type KeysMatching<T, V> = {

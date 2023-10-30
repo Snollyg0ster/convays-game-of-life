@@ -61,20 +61,25 @@ export const nextFrame = () => {
 };
 
 export const startGame = () => {
+  let lastRender = performance.now();
   let run = true;
 
-  const loop = () => {
-    setTimeout(() => {
-      if (!run) {
-        return;
-      }
+  const loop = (delta: number) => {
+    if (!run) {
+      return;
+    }
 
+    const rerenderTime = lastRender + cfg.interval;
+
+    if (delta >= rerenderTime) {
       nextFrame();
-      loop();
-    }, cfg.gameDeltaTime);
+      lastRender = delta - (delta - rerenderTime);
+    }
+
+    requestAnimationFrame(loop);
   };
 
-  loop();
+  loop(performance.now());
   return () => {
     run = false;
   };

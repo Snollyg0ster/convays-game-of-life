@@ -1,10 +1,13 @@
 const esbuild = require("esbuild");
 const fs = require("fs/promises");
 const path = require("path");
-const config = require('./config');
+const config = require("./config");
 
 const copyStatic = async () => {
-  return await fs.cp("./static", config.outDir, { recursive: true, force: true });
+  return await fs.cp("./static", config.outDir, {
+    recursive: true,
+    force: true,
+  });
 };
 
 const build = () =>
@@ -19,8 +22,12 @@ const build = () =>
     const watcher = fs.watch("./src");
 
     for await (const event of watcher) {
-      console.log(event);
-      build();
+      try {
+        console.log(event);
+        await build();
+      } catch (e) {
+        console.error(e);
+      }
     }
   } catch (e) {
     console.error(e);

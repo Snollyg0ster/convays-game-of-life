@@ -1,7 +1,13 @@
 import { START_TEXT, STOP_TEXT, SPEED_TEXT } from "./consts";
 import Config, { cfg } from "./config";
 import { trackMouse } from "./dom";
-import { ColorFields, InputProps, NumberFields, NumberInputProps } from "./types";
+import {
+  ColorFields,
+  InputProps,
+  InputPropsStrictParse,
+  NumberFields,
+  NumberInputProps,
+} from "./types";
 import { assertEventTarget, doNothing } from "./utils";
 
 export const createCanvas = () => {
@@ -70,139 +76,115 @@ export const createCbButton = (title: string, cb: () => void) => {
   return button;
 };
 
-export const createGameSpeedSlider = (min = 1, max = 1000, normal = 100) => {
+type ConfigKeys = Exclude<
+  keyof InstanceType<typeof Config>,
+  "resetField" | "observe" | "unsubscribe"
+>;
+
+export const createInput = <K extends ConfigKeys>(
+  title: string,
+  field: K,
+  props: Config[K] extends string
+    ? InputProps<Config[K]>
+    : InputPropsStrictParse<Config[K]>
+) => {
+  const {
+    type,
+    hor = false,
+    attrs = {},
+    labelClass,
+    inputClass,
+    contClass,
+    onChange,
+    format,
+    parse,
+  } = props;
   const cont = document.createElement("div");
   const label = document.createElement("label");
-  cont.classList.add("col");
-  label.textContent = `${SPEED_TEXT} ${(cfg.gameDeltaTime / 1000).toFixed(2)}`;
-  label.setAttribute("for", "gameSpeed");
   const input = document.createElement("input");
-  input.setAttribute("value", `${cfg.gameDeltaTime}`);
-  input.setAttribute("min", `${min}`);
-  input.setAttribute("max", `${max}`);
-  input.type = "range";
+  const onChangeProps = { ...props, cont, label, input };
+
+  labelClass && label.classList.add(labelClass);
+  inputClass && input.classList.add(inputClass);
+  contClass && cont.classList.add(contClass);
+  cont.classList.add(hor ? "row" : "col");
+  type && (input.type = type);
+  label.textContent = title;
   cont.append(label, input);
+
+  Object.entries(attrs).forEach(
+    ([key, val]) => val !== null && input.setAttribute(key, `${val}`)
+  );
+  input.setAttribute("value", format ? format(cfg[field]) : `${cfg[field]}`);
+
+  cfg.observe(field, (val) => {
+    input.value = format ? format(val) : `${val}`;
+  });
 
   input.oninput = (e) => {
     assertEventTarget(e, HTMLInputElement);
-    const speed = +e.target.value;
-    cfg.gameDeltaTime = speed;
-    const precision = speed > 100 ? 1 : speed < 10 ? 3 : 2;
-    label.textContent = `${SPEED_TEXT} ${(speed / 1000).toFixed(precision)}`;
+    const val = parse ? parse(e.target.value) : e.target.value; //@ts-ignore
+    cfg[field] = val;
+    onChange?.(e.target.value, onChangeProps);
   };
 
   return cont;
+};
+
+export const createGameSpeedSlider = (min = -89, max = 200) => {
+  const rangeToSpeed = (val: number) => val >= 10 ? val / 10 : 1 + (val - 10) * 0.01;
+  const speedToRange = (val: number) => val >= 1 ? val * 10 : (val - 0.9) * 100;
+  const getPrecision = (speed: number) => speed < 0.2 ? 2 : speed < 1 ? 1 : 0;
+
+  const label = `${SPEED_TEXT} ${(cfg.speed).toFixed(getPrecision(cfg.speed))}`;
+  const range = createInput(label, "speed", {
+    type: "range",
+    attrs: { min, max },
+    parse: (val) => rangeToSpeed(+val),
+    format: (val) => `${speedToRange(val)}`
+  });
+
+  cfg.observe("speed", (val) => {
+    const label = range.children.item(0)
+    
+    if (label) {
+      label.textContent = `${SPEED_TEXT} ${val.toFixed(getPrecision(val))}`
+      cfg.interval = cfg.defaultInterval / val;
+    }
+  });
+
+  return range;
 };
 
 export const createNumberInput = (
   title: string,
   field: NumberFields,
-  cb?: (val: number) => void,
   props: NumberInputProps = {}
 ) => {
-  const { min = 1, max = 1000, float = false } = props;
-  const cont = document.createElement("div");
-  const label = document.createElement("label");
-  cont.classList.add("col");
-  const input = document.createElement("input");
-  input.setAttribute("value", `${cfg[field]}`);
-  input.type = "number";
-  cont.append(label, input);
+  const { min = 1, max = 1000, float = false, onChange } = props;
+  const parse = (value: string) => {
+    const num = float ? parseFloat(value) : ~~parseFloat(value);
 
-  cfg.observe(field, (val) => {
-    input.value = `${val}`;
-  });
-
-  input.oninput = (e) => {
-    assertEventTarget(e, HTMLInputElement);
-    const num = float
-      ? parseFloat(e.target.value)
-      : ~~parseFloat(e.target.value);
-    const val = num < min ? min : num > max ? max : num;
-    cfg[field] = val;
-    cb?.(val);
+    return num < min ? min : num > max ? max : num;
   };
 
-  return cont;
-};
-
-type ConfigKeys = Exclude<keyof InstanceType<typeof Config>, 'resetField' | 'observe' | 'unsubscribe'>
-
-export const createInput = <K extends ConfigKeys>(
-  title: string,
-  field: K,
-  props: InputProps<Config[K]>
-) => {
-  const { type, attrs = {}, format, labelClass, inputClass, contClass, onChange } = props;
-  const cont = document.createElement("div");
-  const label = document.createElement("label");
-  const input = document.createElement("input");
-
-  labelClass && label.classList.add(labelClass)
-  inputClass && input.classList.add(inputClass)
-  cont.classList.add("col", contClass || '');
-  input.setAttribute("value", `${cfg[field]}`);
-  type && (input.type = type);
-  label.textContent = title;
-  cont.append(label, input);
-
-  Object.entries(attrs).forEach((attr) => input.setAttribute(...attr))
-
-  cfg.observe(field, (val) => {
-    input.value = `${val}`;
-  });
-
-  input.oninput = (e) => {
-    assertEventTarget(e, HTMLInputElement);
-    const val = format?.(e.target.value) || e.target.value; //@ts-ignore
-    cfg[field] = val;
-    onChange?.(e.target.value);
-  };
-
-  return cont;
-};
-
-export const createColorInput = (
-  title: string,
-  field: ColorFields,
-  cb?: (val: string) => void
-) => {
-  const cont = document.createElement("div");
-  const label = document.createElement("label");
-  label.textContent = title;
-  cont.classList.add("col");
-  const input = document.createElement("input");
-  input.setAttribute("value", `${cfg[field]}`);
-  input.type = "color";
-  cont.append(label, input);
-
-  input.oninput = (e) => {
-    assertEventTarget(e, HTMLInputElement);
-    const color = e.target.value;
-    cfg[field] = color;
-    cb?.(color);
-  };
-
-  return cont;
+  return createInput(title, field, { type: "number", parse, onChange });
 };
 
 export const createCheckbox = (
   title: string,
   field: "drawGrid",
-  cb?: () => void
+  onChange?: () => void
 ) => {
-  const cont = document.createElement("div");
-  const label = document.createElement("label");
-  label.textContent = title;
-  const input = document.createElement("input");
-  cfg[field] && input.setAttribute("checked", "");
-  input.type = "checkbox";
-  cont.append(label, input);
+  let checked = cfg[field];
 
-  input.onclick = () => {
-    cfg[field] = !cfg[field];
-    cb?.();
-  };
-
-  return cont;
+  return createInput(title, field, {
+    type: "checkbox",
+    hor: true,
+    onChange,
+    attrs: {
+      checked: checked ? "" : null,
+    },
+    parse: () => (checked = !checked),
+  });
 };

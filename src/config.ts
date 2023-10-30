@@ -6,7 +6,9 @@ class Config {
   cellSize = 10;
   horCount = 120;
   verCount = 50;
-  gameDeltaTime = 100; // 0.1s
+  speed = 1;
+  interval = 100; // 0.1s
+  defaultInterval = 100; // 0.1s
   backgroundColor = "black";
   cellColor = "#ffffff";
   cursorColor = "#aa0000";

@@ -53,7 +53,10 @@
     cellSize = 10;
     horCount = 120;
     verCount = 50;
-    gameDeltaTime = 100;
+    speed = 1;
+    interval = 100;
+    // 0.1s
+    defaultInterval = 100;
     // 0.1s
     backgroundColor = "black";
     cellColor = "#ffffff";
@@ -100,8 +103,9 @@
   var EXAMPLE_TEXT = "\u041F\u0440\u0438\u043C\u0435\u0440 \u{1FA84}";
   var BACKGROUND_COLOR_TEXT = "\u0426\u0432\u0435\u0442 \u0444\u043E\u043D\u0430";
   var CELL_COLOR_TEXT = "\u0426\u0432\u0435\u0442 \u043A\u043B\u0435\u0442\u043E\u043A";
+  var GRID_COLOR_TEXT = "\u0426\u0432\u0435\u0442 \u0441\u0435\u0442\u043A\u0438";
   var RANDOM_TEXT = "\u0421\u043B\u0443\u0447\u0430\u0439\u043D\u043E \u0437\u0430\u043F\u043E\u043B\u043D\u0438\u0442\u044C \u{1F3B2}";
-  var DENCITY_TEXT = "\u041F\u043B\u043E\u0442\u043D\u043E\u0441\u0442\u044C \u0437\u0430\u043F\u043E\u043B\u043D\u0435\u043D\u0438\u044F";
+  var DENCITY_TEXT = "\u041F\u043B\u043E\u0442\u043D\u043E\u0441\u0442\u044C";
   var GRID_TEXT = "\u0420\u0438\u0441\u043E\u0432\u0430\u0442\u044C \u0441\u0435\u0442\u043A\u0443";
 
   // src/dom.ts
@@ -228,78 +232,83 @@
     button.onclick = cb;
     return button;
   };
-  var createGameSpeedSlider = (min = 1, max = 1e3, normal = 100) => {
+  var createInput = (title, field, props) => {
+    const {
+      type,
+      hor = false,
+      attrs = {},
+      labelClass,
+      inputClass,
+      contClass,
+      onChange,
+      format,
+      parse
+    } = props;
     const cont = document.createElement("div");
     const label = document.createElement("label");
-    cont.classList.add("col");
-    label.textContent = `${SPEED_TEXT} ${(cfg.gameDeltaTime / 1e3).toFixed(2)}`;
-    label.setAttribute("for", "gameSpeed");
     const input = document.createElement("input");
-    input.setAttribute("value", `${cfg.gameDeltaTime}`);
-    input.setAttribute("min", `${min}`);
-    input.setAttribute("max", `${max}`);
-    input.type = "range";
+    const onChangeProps = { ...props, cont, label, input };
+    labelClass && label.classList.add(labelClass);
+    inputClass && input.classList.add(inputClass);
+    contClass && cont.classList.add(contClass);
+    cont.classList.add(hor ? "row" : "col");
+    type && (input.type = type);
+    label.textContent = title;
     cont.append(label, input);
-    input.oninput = (e) => {
-      assertEventTarget(e, HTMLInputElement);
-      const speed = +e.target.value;
-      cfg.gameDeltaTime = speed;
-      const precision = speed > 100 ? 1 : speed < 10 ? 3 : 2;
-      label.textContent = `${SPEED_TEXT} ${(speed / 1e3).toFixed(precision)}`;
-    };
-    return cont;
-  };
-  var createNumberInput = (title, field, cb, props = {}) => {
-    const { min = 1, max = 1e3, float = false } = props;
-    const cont = document.createElement("div");
-    const label = document.createElement("label");
-    cont.classList.add("col");
-    const input = document.createElement("input");
-    input.setAttribute("value", `${cfg[field]}`);
-    input.type = "number";
-    cont.append(label, input);
+    Object.entries(attrs).forEach(
+      ([key, val]) => val !== null && input.setAttribute(key, `${val}`)
+    );
+    input.setAttribute("value", format ? format(cfg[field]) : `${cfg[field]}`);
     cfg.observe(field, (val) => {
-      input.value = `${val}`;
+      input.value = format ? format(val) : `${val}`;
     });
     input.oninput = (e) => {
       assertEventTarget(e, HTMLInputElement);
-      const num = float ? parseFloat(e.target.value) : ~~parseFloat(e.target.value);
-      const val = num < min ? min : num > max ? max : num;
+      const val = parse ? parse(e.target.value) : e.target.value;
       cfg[field] = val;
-      cb?.(val);
+      onChange?.(e.target.value, onChangeProps);
     };
     return cont;
   };
-  var createColorInput = (title, field, cb) => {
-    const cont = document.createElement("div");
-    const label = document.createElement("label");
-    label.textContent = title;
-    cont.classList.add("col");
-    const input = document.createElement("input");
-    input.setAttribute("value", `${cfg[field]}`);
-    input.type = "color";
-    cont.append(label, input);
-    input.oninput = (e) => {
-      assertEventTarget(e, HTMLInputElement);
-      const color = e.target.value;
-      cfg[field] = color;
-      cb?.(color);
-    };
-    return cont;
+  var createGameSpeedSlider = (min = -89, max = 200) => {
+    const rangeToSpeed = (val) => val >= 10 ? val / 10 : 1 + (val - 10) * 0.01;
+    const speedToRange = (val) => val >= 1 ? val * 10 : (val - 0.9) * 100;
+    const getPrecision = (speed) => speed < 0.2 ? 2 : speed < 1 ? 1 : 0;
+    const label = `${SPEED_TEXT} ${cfg.speed.toFixed(getPrecision(cfg.speed))}`;
+    const range = createInput(label, "speed", {
+      type: "range",
+      attrs: { min, max },
+      parse: (val) => rangeToSpeed(+val),
+      format: (val) => `${speedToRange(val)}`
+    });
+    cfg.observe("speed", (val) => {
+      const label2 = range.children.item(0);
+      if (label2) {
+        label2.textContent = `${SPEED_TEXT} ${val.toFixed(getPrecision(val))}`;
+        cfg.interval = cfg.defaultInterval / val;
+      }
+    });
+    return range;
   };
-  var createCheckbox = (title, field, cb) => {
-    const cont = document.createElement("div");
-    const label = document.createElement("label");
-    label.textContent = title;
-    const input = document.createElement("input");
-    cfg[field] && input.setAttribute("checked", "");
-    input.type = "checkbox";
-    cont.append(label, input);
-    input.onclick = () => {
-      cfg[field] = !cfg[field];
-      cb?.();
+  var createNumberInput = (title, field, props = {}) => {
+    const { min = 1, max = 1e3, float = false, onChange } = props;
+    const parse = (value) => {
+      const num = float ? parseFloat(value) : ~~parseFloat(value);
+      return num < min ? min : num > max ? max : num;
     };
-    return cont;
+    return createInput(title, field, { type: "number", parse, onChange });
+  };
+  var createCheckbox = (title, field, onChange) => {
+    let checked = cfg[field];
+    return createInput(title, field, {
+      type: "checkbox",
+      hor: true,
+      onChange,
+      attrs: {
+        checked: checked ? "" : null
+      },
+      parse: () => checked = !checked
+    });
   };
 
   // src/defaults.ts
@@ -2949,23 +2958,30 @@
     drawCells(ctx, cfg.field);
   };
   var startGame = () => {
+    let lastRender = performance.now();
     let run = true;
-    const loop = () => {
-      setTimeout(() => {
-        if (!run) {
-          return;
-        }
+    const loop = (delta) => {
+      if (!run) {
+        return;
+      }
+      const rerenderTime = lastRender + cfg.interval;
+      if (delta >= rerenderTime) {
         nextFrame();
-        loop();
-      }, cfg.gameDeltaTime);
+        lastRender = delta - (delta - rerenderTime);
+      }
+      requestAnimationFrame(loop);
     };
-    loop();
+    loop(performance.now());
     return () => {
       run = false;
     };
   };
 
   // src/layout.ts
+  var updateStyleAndDraw = () => {
+    updateCanvasStyle();
+    drawCells(ctx, cfg.field);
+  };
   var buttonCont = document.createElement("div");
   var root = document.getElementById("root");
   var gameButton = createGameButton(startGame);
@@ -2975,36 +2991,22 @@
     drawCells(ctx, cfg.field);
   });
   var gameSpeed = createGameSpeedSlider();
-  var verSizeInput = createNumberInput(
-    "\u0420\u0430\u0437\u043C\u0435\u0440 \u043F\u043E \u0432\u0435\u0440\u0442\u0438\u043A\u0430\u043B\u0438",
-    "verCount",
-    () => {
+  var verSizeInput = createNumberInput("\u0420\u0430\u0437\u043C\u0435\u0440 \u043F\u043E \u0432\u0435\u0440\u0442\u0438\u043A\u0430\u043B\u0438", "verCount", {
+    onChange: () => {
       cfg.resetField();
-      updateCanvasStyle();
-      drawCells(ctx, cfg.field);
+      updateStyleAndDraw();
     }
-  );
-  var horSizeInput = createNumberInput(
-    "\u0420\u0430\u0437\u043C\u0435\u0440 \u043F\u043E \u0433\u043E\u0440\u0438\u0437\u043E\u043D\u0442\u0430\u043B\u0438",
-    "horCount",
-    () => {
-      cfg.resetField();
-      updateCanvasStyle();
-      drawCells(ctx, cfg.field);
-    }
-  );
-  var cellSizeInput = createNumberInput(
-    "\u0420\u0430\u0437\u043C\u0435\u0440 \u043A\u043B\u0435\u0442\u043A\u0438 (px)",
-    "cellSize",
-    () => {
-      updateCanvasStyle();
-      drawCells(ctx, cfg.field);
-    }
-  );
-  var drawGridButton = createCheckbox(GRID_TEXT, "drawGrid", () => {
-    updateCanvasStyle();
-    drawCells(ctx, cfg.field);
   });
+  var horSizeInput = createNumberInput("\u0420\u0430\u0437\u043C\u0435\u0440 \u043F\u043E \u0433\u043E\u0440\u0438\u0437\u043E\u043D\u0442\u0430\u043B\u0438", "horCount", {
+    onChange: () => {
+      cfg.resetField();
+      updateStyleAndDraw();
+    }
+  });
+  var cellSizeInput = createNumberInput("\u0420\u0430\u0437\u043C\u0435\u0440 \u043A\u043B\u0435\u0442\u043A\u0438 (px)", "cellSize", {
+    onChange: updateStyleAndDraw
+  });
+  var drawGridButton = createCheckbox(GRID_TEXT, "drawGrid", updateStyleAndDraw);
   var logFunction = () => console.log(cfg.field);
   var logButton = createCbButton("log", logFunction);
   var drawExampleField = () => {
@@ -3012,27 +3014,23 @@
     cfg.verCount = 50;
     cfg.horCount = 50;
     cfg.cellSize = 10;
-    cfg.gameDeltaTime = 50;
+    cfg.speed = 1;
     cfg.field = preloadedField;
-    updateCanvasStyle();
-    drawCells(ctx, cfg.field);
+    updateStyleAndDraw();
   };
   var exampleButton = createCbButton(EXAMPLE_TEXT, drawExampleField);
-  var backgroundColor = createColorInput(
-    BACKGROUND_COLOR_TEXT,
-    "backgroundColor",
-    updateCanvasStyle
-  );
-  var cellColor = createColorInput(
-    CELL_COLOR_TEXT,
-    "cellColor",
-    () => drawCells(ctx, cfg.field)
-  );
-  var gridColor = createColorInput(
-    CELL_COLOR_TEXT,
-    "gridColor",
-    () => drawCells(ctx, cfg.field)
-  );
+  var backgroundColor = createInput(BACKGROUND_COLOR_TEXT, "backgroundColor", {
+    type: "color",
+    onChange: updateStyleAndDraw
+  });
+  var cellColor = createInput(CELL_COLOR_TEXT, "cellColor", {
+    type: "color",
+    onChange: () => drawCells(ctx, cfg.field)
+  });
+  var gridColor = createInput(GRID_COLOR_TEXT, "gridColor", {
+    type: "color",
+    onChange: () => drawCells(ctx, cfg.field)
+  });
   var colorCont = document.createElement("div");
   colorCont.classList.add("row");
   colorCont.append(backgroundColor, cellColor, gridColor);
@@ -3043,19 +3041,23 @@
     drawCells(ctx, cfg.field);
   };
   var randomButton = createCbButton(RANDOM_TEXT, randomlyFillField);
-  var randomDencityButton = createNumberInput(
-    DENCITY_TEXT,
+  var randomDencity = createInput(
+    `${DENCITY_TEXT} ${~~(+cfg.dencityOfRandomFill * 100)}%`,
     "dencityOfRandomFill",
-    void 0,
     {
-      min: 0.01,
-      max: 1,
-      float: true
+      type: "range",
+      attrs: {
+        min: 0.01,
+        max: 1,
+        step: 0.01
+      },
+      parse: (val) => +val,
+      onChange: (val, { label }) => label.textContent = `${DENCITY_TEXT} ${~~(+val * 100)}%`
     }
   );
   var randomFillCont = document.createElement("div");
   randomFillCont.classList.add("row");
-  randomFillCont.append(randomButton, randomDencityButton);
+  randomFillCont.append(randomButton, randomDencity);
   buttonCont.classList.add("buttons");
   buttonCont.append(
     gameButton,

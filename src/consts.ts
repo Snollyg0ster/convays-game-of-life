@@ -8,5 +8,5 @@ export const BACKGROUND_COLOR_TEXT = "Цвет фона";
 export const CELL_COLOR_TEXT = "Цвет клеток";
 export const GRID_COLOR_TEXT = "Цвет сетки";
 export const RANDOM_TEXT = "Случайно заполнить 🎲";
-export const DENCITY_TEXT = "Плотность заполнения";
+export const DENCITY_TEXT = "Плотность";
 export const GRID_TEXT = "Рисовать сетку";
