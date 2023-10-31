@@ -1,9 +1,15 @@
 import { Cell } from "./types";
 import { cfg } from "./config";
-import { drawCells } from "./dom";
+import { drawCells } from "./render";
 import { createCanvas } from "./elements";
 
 export const { ctx, canvas, updateCanvasStyle } = createCanvas();
+
+cfg.observe('verCount', updateCanvasStyle);
+cfg.observe('horCount', updateCanvasStyle);
+cfg.observe('backgroundColor', updateCanvasStyle);
+cfg.observe('cellSize', updateCanvasStyle);
+cfg.observe('drawGrid', updateCanvasStyle);
 
 const getIndex = (len: number, pos: number) =>
   pos > len ? 0 : pos < 0 ? len : pos;

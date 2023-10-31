@@ -1,3 +1,6 @@
+import { cfg } from "./config";
+import { Coord } from "./types";
+
 export const copy = <T>(val: T) => JSON.parse(JSON.stringify(val));
 
 export function assertEventTarget<Element extends Function>(
@@ -12,3 +15,14 @@ export function assertEventTarget<Element extends Function>(
 };
 
 export const doNothing = <T = any>() => (val: string) => val as T;
+
+
+export const getCellCoord = (
+  e: MouseEvent,
+): Coord => {
+  const gridWidth = cfg.drawGrid ? cfg.gridWidth : 0;
+  const x = ~~(e.offsetX / (cfg.cellSize + gridWidth));
+  const y = ~~(e.offsetY / (cfg.cellSize + gridWidth));
+
+  return {x, y}
+};

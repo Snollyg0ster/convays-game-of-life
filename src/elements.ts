@@ -1,14 +1,22 @@
 import { START_TEXT, STOP_TEXT, SPEED_TEXT } from "./consts";
 import Config, { cfg } from "./config";
-import { trackMouse } from "./dom";
 import {
-  ColorFields,
   InputProps,
   InputPropsStrictParse,
   NumberFields,
   NumberInputProps,
+  Coord
 } from "./types";
-import { assertEventTarget, doNothing } from "./utils";
+import { assertEventTarget, getCellCoord } from "./utils";
+import { drawCells } from "./render";
+
+const toggleCell = ({x, y}: Coord, alive?: boolean) => {
+  if (y === cfg.verCount) {
+    return;
+  }
+
+  cfg.field[y][x] = alive === undefined ? !cfg.field[y][x] : alive;
+}
 
 export const createCanvas = () => {
   const canvas = document.createElement("canvas");
@@ -19,7 +27,8 @@ export const createCanvas = () => {
   let mouseMoveCount = 0;
   const onMouseMove = (e: MouseEvent) => {
     mouseMoveCount += 1;
-    trackMouse(e, ctx, true);
+    toggleCell(getCellCoord(e), true)
+    drawCells(ctx, cfg.field);
   };
 
   canvas.addEventListener("mousedown", () => {
@@ -28,7 +37,10 @@ export const createCanvas = () => {
 
   canvas.addEventListener("mouseup", (e) => {
     canvas.removeEventListener("mousemove", onMouseMove);
-    !mouseMoveCount && trackMouse(e, ctx);
+    if(!mouseMoveCount) {
+      toggleCell(getCellCoord(e))
+      drawCells(ctx, cfg.field);
+    };
     mouseMoveCount = 0;
   });
 

@@ -2,7 +2,7 @@ import "./style.css";
 
 import { root, buttonCont } from "./layout";
 import { canvas, ctx } from "./game";
-import { drawCells } from "./dom";
+import { drawCells } from "./render";
 import { cfg } from "./config";
 
 root && root.append(canvas, buttonCont);

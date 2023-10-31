@@ -39,8 +39,8 @@
         Object.assign(object, new Observer());
         return new Proxy(object, {
           set(target, key, value) {
-            target.emit(key, value);
             target[key] = value;
+            target.emit(key, value);
             return true;
           }
         });
@@ -108,7 +108,21 @@
   var DENCITY_TEXT = "\u041F\u043B\u043E\u0442\u043D\u043E\u0441\u0442\u044C";
   var GRID_TEXT = "\u0420\u0438\u0441\u043E\u0432\u0430\u0442\u044C \u0441\u0435\u0442\u043A\u0443";
 
-  // src/dom.ts
+  // src/utils.ts
+  function assertEventTarget(event, element) {
+    if (event.target && event.target instanceof element) {
+      return;
+    }
+    throw Error(`Target is not instance of ${element}`);
+  }
+  var getCellCoord = (e) => {
+    const gridWidth = cfg.drawGrid ? cfg.gridWidth : 0;
+    const x = ~~(e.offsetX / (cfg.cellSize + gridWidth));
+    const y = ~~(e.offsetY / (cfg.cellSize + gridWidth));
+    return { x, y };
+  };
+
+  // src/render.ts
   var clearCtx = (ctx2) => ctx2 && ctx2.clearRect(0, 0, cfg.gameWidth, cfg.gameHeight);
   function drawGrid(ctx2) {
     for (let y = 1; y < cfg.verCount; y++) {
@@ -159,26 +173,14 @@
       ctx2.fillRect(cursor.x, cursor.y, cfg.cellSize, cfg.cellSize);
     }
   }
-  var trackMouse = (e, ctx2, val) => {
-    const gridWidth = cfg.drawGrid ? cfg.gridWidth : 0;
-    const x = ~~(e.offsetX / (cfg.cellSize + gridWidth));
-    const y = ~~(e.offsetY / (cfg.cellSize + gridWidth));
+
+  // src/elements.ts
+  var toggleCell = ({ x, y }, alive) => {
     if (y === cfg.verCount) {
       return;
     }
-    cfg.field[y][x] = val === void 0 ? !cfg.field[y][x] : val;
-    drawCells(ctx2, cfg.field);
+    cfg.field[y][x] = alive === void 0 ? !cfg.field[y][x] : alive;
   };
-
-  // src/utils.ts
-  function assertEventTarget(event, element) {
-    if (event.target && event.target instanceof element) {
-      return;
-    }
-    throw Error(`Target is not instance of ${element}`);
-  }
-
-  // src/elements.ts
   var createCanvas = () => {
     const canvas2 = document.createElement("canvas");
     const ctx2 = canvas2.getContext("2d");
@@ -188,14 +190,19 @@
     let mouseMoveCount = 0;
     const onMouseMove = (e) => {
       mouseMoveCount += 1;
-      trackMouse(e, ctx2, true);
+      toggleCell(getCellCoord(e), true);
+      drawCells(ctx2, cfg.field);
     };
     canvas2.addEventListener("mousedown", () => {
       canvas2.addEventListener("mousemove", onMouseMove);
     });
     canvas2.addEventListener("mouseup", (e) => {
       canvas2.removeEventListener("mousemove", onMouseMove);
-      !mouseMoveCount && trackMouse(e, ctx2);
+      if (!mouseMoveCount) {
+        toggleCell(getCellCoord(e));
+        drawCells(ctx2, cfg.field);
+      }
+      ;
       mouseMoveCount = 0;
     });
     const updateCanvasStyle2 = () => {
@@ -2917,6 +2924,11 @@
 
   // src/game.ts
   var { ctx, canvas, updateCanvasStyle } = createCanvas();
+  cfg.observe("verCount", updateCanvasStyle);
+  cfg.observe("horCount", updateCanvasStyle);
+  cfg.observe("backgroundColor", updateCanvasStyle);
+  cfg.observe("cellSize", updateCanvasStyle);
+  cfg.observe("drawGrid", updateCanvasStyle);
   var getIndex = (len, pos) => pos > len ? 0 : pos < 0 ? len : pos;
   var getNeighbours = (field, x, y) => {
     let neighbours = field[y][x] ? -1 : 0;
@@ -2978,9 +2990,10 @@
   };
 
   // src/layout.ts
-  var updateStyleAndDraw = () => {
-    updateCanvasStyle();
-    drawCells(ctx, cfg.field);
+  var drawField = () => drawCells(ctx, cfg.field);
+  var resetField = () => {
+    cfg.resetField();
+    drawField();
   };
   var buttonCont = document.createElement("div");
   var root = document.getElementById("root");
@@ -2992,21 +3005,15 @@
   });
   var gameSpeed = createGameSpeedSlider();
   var verSizeInput = createNumberInput("\u0420\u0430\u0437\u043C\u0435\u0440 \u043F\u043E \u0432\u0435\u0440\u0442\u0438\u043A\u0430\u043B\u0438", "verCount", {
-    onChange: () => {
-      cfg.resetField();
-      updateStyleAndDraw();
-    }
+    onChange: resetField
   });
   var horSizeInput = createNumberInput("\u0420\u0430\u0437\u043C\u0435\u0440 \u043F\u043E \u0433\u043E\u0440\u0438\u0437\u043E\u043D\u0442\u0430\u043B\u0438", "horCount", {
-    onChange: () => {
-      cfg.resetField();
-      updateStyleAndDraw();
-    }
+    onChange: resetField
   });
   var cellSizeInput = createNumberInput("\u0420\u0430\u0437\u043C\u0435\u0440 \u043A\u043B\u0435\u0442\u043A\u0438 (px)", "cellSize", {
-    onChange: updateStyleAndDraw
+    onChange: drawField
   });
-  var drawGridButton = createCheckbox(GRID_TEXT, "drawGrid", updateStyleAndDraw);
+  var drawGridButton = createCheckbox(GRID_TEXT, "drawGrid", drawField);
   var logFunction = () => console.log(cfg.field);
   var logButton = createCbButton("log", logFunction);
   var drawExampleField = () => {
@@ -3016,20 +3023,19 @@
     cfg.cellSize = 10;
     cfg.speed = 1;
     cfg.field = preloadedField;
-    updateStyleAndDraw();
+    drawField();
   };
   var exampleButton = createCbButton(EXAMPLE_TEXT, drawExampleField);
   var backgroundColor = createInput(BACKGROUND_COLOR_TEXT, "backgroundColor", {
-    type: "color",
-    onChange: updateStyleAndDraw
+    type: "color"
   });
   var cellColor = createInput(CELL_COLOR_TEXT, "cellColor", {
     type: "color",
-    onChange: () => drawCells(ctx, cfg.field)
+    onChange: drawField
   });
   var gridColor = createInput(GRID_COLOR_TEXT, "gridColor", {
     type: "color",
-    onChange: () => drawCells(ctx, cfg.field)
+    onChange: drawField
   });
   var colorCont = document.createElement("div");
   colorCont.classList.add("row");

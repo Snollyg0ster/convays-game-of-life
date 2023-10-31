@@ -46,8 +46,8 @@ export function observe<T extends ClassType>(constructor: T) {
 
       return new Proxy(object, {
         set(target: Record<string, any>, key: string, value) {
-          target.emit(key, value);
           target[key] = value;
+          target.emit(key, value);
           return true;
         }
       });

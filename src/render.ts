@@ -67,20 +67,3 @@ export function drawCells(
     ctx.fillRect(cursor.x, cursor.y, cfg.cellSize, cfg.cellSize);
   }
 }
-
-export const trackMouse = (
-  e: MouseEvent,
-  ctx: CanvasRenderingContext2D | null,
-  val?: boolean
-) => {
-  const gridWidth = cfg.drawGrid ? cfg.gridWidth : 0;
-  const x = ~~(e.offsetX / (cfg.cellSize + gridWidth));
-  const y = ~~(e.offsetY / (cfg.cellSize + gridWidth));
-
-  if (y === cfg.verCount) {
-    return;
-  }
-
-  cfg.field[y][x] = val === undefined ? !cfg.field[y][x] : val;
-  drawCells(ctx, cfg.field);
-};
