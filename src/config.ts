@@ -1,4 +1,4 @@
-import { Observed, bind, observe } from "./decorator";
+import { Observed, bind, observe } from "./utils/decorators";
 import { Cell } from "./types";
 
 @observe
@@ -49,5 +49,4 @@ class Config {
 }
 
 export const cfg = new Config() as Observed<Config>;
-// window.cfg = cfg
 export default Config;

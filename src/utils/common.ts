@@ -1,5 +1,5 @@
-import { cfg } from "./config";
-import { Coord } from "./types";
+import { cfg } from "../config";
+import { Coord } from "../types";
 
 export const copy = <T>(val: T) => JSON.parse(JSON.stringify(val));
 

@@ -12,7 +12,7 @@
     return result;
   };
 
-  // src/decorator.ts
+  // src/utils/decorators.ts
   var Observer = class {
     observers = {};
     observe = (key, cb) => {
@@ -117,7 +117,7 @@
   ], Config);
   var cfg = new Config();
 
-  // src/consts.ts
+  // src/consts/text.ts
   var START_TEXT = "\u0421\u0442\u0430\u0440\u0442 \u{1F680}";
   var STOP_TEXT = "\u0421\u0442\u043E\u043F \u26D4\uFE0F";
   var CLEAR_TEXT = "\u041E\u0447\u0438\u0441\u0442\u0438\u0442\u044C \u232B";
@@ -131,7 +131,7 @@
   var DENCITY_TEXT = "\u041F\u043B\u043E\u0442\u043D\u043E\u0441\u0442\u044C";
   var GRID_TEXT = "\u0420\u0438\u0441\u043E\u0432\u0430\u0442\u044C \u0441\u0435\u0442\u043A\u0443";
 
-  // src/utils.ts
+  // src/utils/common.ts
   function assertEventTarget(event, element) {
     if (event.target && event.target instanceof element) {
       return;
@@ -152,7 +152,7 @@
     cfg.field[y][x] = alive === void 0 ? !cfg.field[y][x] : alive;
   };
 
-  // src/elements.ts
+  // src/layout/elements.ts
   var createCanvas = () => {
     const canvasCont2 = document.createElement("div");
     const gameCanvas = document.createElement("canvas");
@@ -287,7 +287,7 @@
     });
   };
 
-  // src/defaults.ts
+  // src/consts/defaults.ts
   var preloadedField = `[[false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false],
 [false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false],
 [false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false],
@@ -473,7 +473,7 @@
     };
   };
 
-  // src/layout.ts
+  // src/layout/index.ts
   var buttonCont = document.createElement("div");
   var root = document.getElementById("root");
   var gameButton = createGameButton(startGame);

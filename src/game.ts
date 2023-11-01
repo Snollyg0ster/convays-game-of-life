@@ -1,8 +1,8 @@
 import { Cell } from "./types";
 import { cfg } from "./config";
 import { renderCells, renderGrid } from "./render";
-import { createCanvas } from "./elements";
-import { getCellCoord, toggleCell } from "./utils";
+import { createCanvas } from "./layout/elements";
+import { getCellCoord, toggleCell } from "./utils/common";
 
 export const { canvas, canvasCont, updateCanvasStyle, changeCanvasColor } = createCanvas();
 export const drawGame = () => renderCells(canvas.game.ctx, cfg.field);

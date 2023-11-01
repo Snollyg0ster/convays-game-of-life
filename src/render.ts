@@ -1,4 +1,4 @@
-import { Cell, Coord } from "./types";
+import { Cell } from "./types";
 import { cfg } from "./config";
 
 export const clearCtx = (ctx: CanvasRenderingContext2D | null) =>

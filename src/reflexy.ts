@@ -1,6 +1,6 @@
 import { cfg } from "./config";
 import { drawGame, drawGrid, updateCanvasStyle, changeCanvasColor } from "./game";
-import { voidExecutor } from "./utils";
+import { voidExecutor } from "./utils/common";
 
 const updateCanvas = voidExecutor(updateCanvasStyle, drawGame, drawGrid);
 

@@ -1,4 +1,4 @@
-import { cfg } from "./config";
+import { cfg } from "../config";
 import {
   createGameButton,
   createCbButton,
@@ -17,10 +17,10 @@ import {
   GRID_TEXT,
   NEXT_FRAME_TEXT,
   RANDOM_TEXT,
-} from "./consts";
-import { preloadedField } from "./defaults";
-import { startGame, nextFrame, drawGame } from "./game";
-import { copy, voidExecutor } from "./utils";
+} from "../consts/text";
+import { preloadedField } from "../consts/defaults";
+import { startGame, nextFrame, drawGame } from "../game";
+import { voidExecutor } from "../utils/common";
 
 export const buttonCont = document.createElement("div");
 export const root = document.getElementById("root");

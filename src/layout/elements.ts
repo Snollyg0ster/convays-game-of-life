@@ -1,13 +1,12 @@
-import { START_TEXT, STOP_TEXT, SPEED_TEXT } from "./consts";
-import Config, { cfg } from "./config";
+import { START_TEXT, STOP_TEXT, SPEED_TEXT } from "../consts/text";
+import Config, { cfg } from "../config";
 import {
   InputProps,
   InputPropsStrictParse,
   NumberFields,
   NumberInputProps,
-  Coord
-} from "./types";
-import { assertEventTarget } from "./utils";
+} from "../types";
+import { assertEventTarget } from "../utils/common";
 
 export const createCanvas = () => {
   const canvasCont = document.createElement("div");
