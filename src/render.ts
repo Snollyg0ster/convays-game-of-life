@@ -4,7 +4,13 @@ import { cfg } from "./config";
 export const clearCtx = (ctx: CanvasRenderingContext2D | null) =>
   ctx && ctx.clearRect(0, 0, cfg.gameWidth, cfg.gameHeight);
 
-export function drawGrid(ctx: CanvasRenderingContext2D) {
+export function renderGrid(ctx: CanvasRenderingContext2D | null) {
+  if (!ctx) {
+    return;
+  }
+
+  clearCtx(ctx);
+
   for (let y = 1; y < cfg.verCount; y++) {
     const yPos = y * (cfg.cellSize + cfg.gridWidth) - cfg.gridWidth;
     const gameWidth = cfg.gameWidth;
@@ -32,17 +38,15 @@ export function drawGrid(ctx: CanvasRenderingContext2D) {
   }
 }
 
-export function drawCells(
+export function renderCells(
   ctx: CanvasRenderingContext2D | null,
-  field: Cell[][],
-  cursor?: Coord
+  field: Cell[][]
 ) {
   if (!ctx) {
     return;
   }
-
+  
   clearCtx(ctx);
-  cfg.cellSize > 1 && cfg.drawGrid && drawGrid(ctx);
   ctx.fillStyle = cfg.cellColor;
   const gridWidth = cfg.drawGrid ? cfg.gridWidth : 0;
 
@@ -60,10 +64,5 @@ export function drawCells(
 
       ctx.fillRect(xPos, yPos, cfg.cellSize, cfg.cellSize);
     }
-  }
-
-  if (cursor) {
-    ctx.fillStyle = cfg.cursorColor;
-    ctx.fillRect(cursor.x, cursor.y, cfg.cellSize, cfg.cellSize);
   }
 }

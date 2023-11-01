@@ -1,11 +1,16 @@
-body {
-  /* background-color: black; */
-}
-
 #root {
   display: flex;
-  /* align-items: center; */
   gap: 30px;
+}
+
+.canvas-cont {
+  position: relative;
+}
+
+.canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 .row {

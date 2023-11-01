@@ -16,6 +16,7 @@ export function assertEventTarget<Element extends Function>(
 
 export const doNothing = <T = any>() => (val: string) => val as T;
 
+export const voidExecutor = (...fns: (() => void)[]) => () => fns.forEach(fn => fn());
 
 export const getCellCoord = (
   e: MouseEvent,
@@ -26,3 +27,11 @@ export const getCellCoord = (
 
   return {x, y}
 };
+
+export const toggleCell = ({x, y}: Coord, alive?: boolean) => {
+  if (y === cfg.verCount) {
+    return;
+  }
+
+  cfg.field[y][x] = alive === undefined ? !cfg.field[y][x] : alive;
+}

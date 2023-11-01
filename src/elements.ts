@@ -7,57 +7,47 @@ import {
   NumberInputProps,
   Coord
 } from "./types";
-import { assertEventTarget, getCellCoord } from "./utils";
-import { drawCells } from "./render";
-
-const toggleCell = ({x, y}: Coord, alive?: boolean) => {
-  if (y === cfg.verCount) {
-    return;
-  }
-
-  cfg.field[y][x] = alive === undefined ? !cfg.field[y][x] : alive;
-}
+import { assertEventTarget } from "./utils";
 
 export const createCanvas = () => {
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-  canvas.classList.add("canvas");
-  canvas.width = cfg.gameWidth;
-  canvas.height = cfg.gameHeight;
-  let mouseMoveCount = 0;
-  const onMouseMove = (e: MouseEvent) => {
-    mouseMoveCount += 1;
-    toggleCell(getCellCoord(e), true)
-    drawCells(ctx, cfg.field);
+  const canvasCont = document.createElement("div");
+  const gameCanvas = document.createElement("canvas");
+  const gridCanvas = document.createElement("canvas");
+  const uiCanvas = document.createElement("canvas");
+  const gameCtx = gameCanvas.getContext("2d");
+  const gridCtx = gridCanvas.getContext("2d");
+  const uiCtx = uiCanvas.getContext("2d");
+  const canvases = [gameCanvas, gridCanvas, uiCanvas];
+  const canvas = {
+    game: { el: gameCanvas, ctx: gameCtx },
+    grid: { el: gridCanvas, ctx: gridCtx },
+    ui: { el: uiCanvas, ctx: uiCtx },
   };
+  
+  canvasCont.append(...canvases);
+  canvasCont.classList.add('canvas-cont');
+  gameCanvas.id = 'game-canvas';
+  gridCanvas.id = 'grid-canvas';
+  uiCanvas.id = 'ui-canvas';
+  [gridCanvas, uiCanvas].forEach(canvas => canvas.classList.add('canvas'));
 
-  canvas.addEventListener("mousedown", () => {
-    canvas.addEventListener("mousemove", onMouseMove);
-  });
-
-  canvas.addEventListener("mouseup", (e) => {
-    canvas.removeEventListener("mousemove", onMouseMove);
-    if(!mouseMoveCount) {
-      toggleCell(getCellCoord(e))
-      drawCells(ctx, cfg.field);
-    };
-    mouseMoveCount = 0;
-  });
-
-  const updateCanvasStyle = () => {
+  const updateCanvas = (canvas: HTMLCanvasElement, i: number) => {
     canvas.height = cfg.gameHeight;
     canvas.width = cfg.gameWidth;
-    canvas.setAttribute(
-      "style",
-      `width: ${cfg.gameWidth}px;
-        height: ${cfg.gameHeight}px;
-        background: ${cfg.backgroundColor};`
-    );
+    canvas.style.width = `${cfg.gameWidth}px`
+    canvas.style.height = `${cfg.gameHeight}px`
   };
 
-  updateCanvasStyle();
+  const changeCanvasColor = () => {
+    gameCanvas.style.background = cfg.backgroundColor;
+  }
 
-  return { canvas, ctx, updateCanvasStyle };
+  const updateCanvasStyle = () => canvases.forEach(updateCanvas);
+
+  updateCanvasStyle();
+  changeCanvasColor();
+
+  return { canvas, canvasCont, updateCanvasStyle, changeCanvasColor };
 };
 
 export const createGameButton = (cb: () => () => void, isRuning = false) => {

@@ -1,4 +1,4 @@
-import { Observed, observe } from "./decorator";
+import { Observed, bind, observe } from "./decorator";
 import { Cell } from "./types";
 
 @observe
@@ -40,11 +40,14 @@ class Config {
     return (this.cellSize + gridWidth) * this.verCount;
   }
 
+  @bind
   resetField() {
     this.field = this.initField;
     this.prevField = this.initField;
+    console.log('resetField')
   }
 }
 
 export const cfg = new Config() as Observed<Config>;
+// window.cfg = cfg
 export default Config;

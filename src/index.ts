@@ -1,9 +1,10 @@
 import "./style.css";
 
 import { root, buttonCont } from "./layout";
-import { canvas, ctx } from "./game";
-import { drawCells } from "./render";
-import { cfg } from "./config";
+import { drawGame, canvasCont, drawGrid } from "./game";
+import {reflexy} from './reflexy'
 
-root && root.append(canvas, buttonCont);
-drawCells(ctx, cfg.field);
+root && root.append(canvasCont, buttonCont);
+reflexy();
+drawGame();
+drawGrid();

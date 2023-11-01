@@ -7,7 +7,6 @@ import {
   createInput,
   createCheckbox,
 } from "./elements";
-import { drawCells } from "./render";
 import {
   BACKGROUND_COLOR_TEXT,
   CELL_COLOR_TEXT,
@@ -20,62 +19,44 @@ import {
   RANDOM_TEXT,
 } from "./consts";
 import { preloadedField } from "./defaults";
-import { startGame, nextFrame, ctx } from "./game";
-
-const drawField = () => drawCells(ctx, cfg.field);
-const resetField = () => {
-  cfg.resetField();
-  drawField();
-};
+import { startGame, nextFrame, drawGame } from "./game";
+import { copy, voidExecutor } from "./utils";
 
 export const buttonCont = document.createElement("div");
 export const root = document.getElementById("root");
 
 const gameButton = createGameButton(startGame);
 const nextFrameButton = createCbButton(NEXT_FRAME_TEXT, nextFrame);
-const clearButton = createCbButton(CLEAR_TEXT, () => {
-  cfg.resetField();
-  drawCells(ctx, cfg.field);
-});
+const clearButton = createCbButton(CLEAR_TEXT, voidExecutor(cfg.resetField, drawGame));
 const gameSpeed = createGameSpeedSlider();
 
-const verSizeInput = createNumberInput("Размер по вертикали", "verCount", {
-  onChange: resetField,
-});
-const horSizeInput = createNumberInput("Размер по горизонтали", "horCount", {
-  onChange: resetField,
-});
-const cellSizeInput = createNumberInput("Размер клетки (px)", "cellSize", {
-  onChange: drawField,
-});
+const verSizeInput = createNumberInput("Размер по вертикали", "verCount", {onChange: cfg.resetField});
+const horSizeInput = createNumberInput("Размер по горизонтали", "horCount", {onChange: cfg.resetField});
+const cellSizeInput = createNumberInput("Размер клетки (px)", "cellSize");
 
-const drawGridButton = createCheckbox(GRID_TEXT, "drawGrid", drawField);
+const drawGridButton = createCheckbox(GRID_TEXT, "drawGrid");
 
-const logFunction = () => console.log(cfg.field);
+const logFunction = () =>
+  console.log(
+    JSON.stringify(
+      cfg.field.map((row) => row.map((cell) => !!cell))
+    ).replaceAll("],", "],\n")
+  );
 const logButton = createCbButton("log", logFunction);
 
 const drawExampleField = () => {
   cfg.resetField();
+  cfg.field = JSON.parse(preloadedField);
   cfg.verCount = 50;
   cfg.horCount = 50;
   cfg.cellSize = 10;
   cfg.speed = 1;
-  cfg.field = preloadedField;
-  drawField();
 };
 const exampleButton = createCbButton(EXAMPLE_TEXT, drawExampleField);
 
-const backgroundColor = createInput(BACKGROUND_COLOR_TEXT, "backgroundColor", {
-  type: "color",
-});
-const cellColor = createInput(CELL_COLOR_TEXT, "cellColor", {
-  type: "color",
-  onChange: drawField,
-});
-const gridColor = createInput(GRID_COLOR_TEXT, "gridColor", {
-  type: "color",
-  onChange: drawField,
-});
+const backgroundColor = createInput(BACKGROUND_COLOR_TEXT, "backgroundColor", {type: "color"});
+const cellColor = createInput(CELL_COLOR_TEXT, "cellColor", {type: "color"});
+const gridColor = createInput(GRID_COLOR_TEXT, "gridColor", {type: "color"});
 const colorCont = document.createElement("div");
 colorCont.classList.add("row");
 colorCont.append(backgroundColor, cellColor, gridColor);
@@ -87,7 +68,7 @@ const randomlyFillField = () => {
   cfg.field = randomField
     .map((row) => row.fill(false))
     .map((row) => row.map(() => Math.random() < dencity));
-  drawCells(ctx, cfg.field);
+  drawGame();
 };
 const randomButton = createCbButton(RANDOM_TEXT, randomlyFillField);
 const randomDencity = createInput(

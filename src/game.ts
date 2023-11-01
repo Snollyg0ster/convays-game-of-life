@@ -1,15 +1,33 @@
 import { Cell } from "./types";
 import { cfg } from "./config";
-import { drawCells } from "./render";
+import { renderCells, renderGrid } from "./render";
 import { createCanvas } from "./elements";
+import { getCellCoord, toggleCell } from "./utils";
 
-export const { ctx, canvas, updateCanvasStyle } = createCanvas();
+export const { canvas, canvasCont, updateCanvasStyle, changeCanvasColor } = createCanvas();
+export const drawGame = () => renderCells(canvas.game.ctx, cfg.field);
+export const drawGrid = () => cfg.cellSize > 1 && cfg.drawGrid && renderGrid(canvas.grid.ctx);
 
-cfg.observe('verCount', updateCanvasStyle);
-cfg.observe('horCount', updateCanvasStyle);
-cfg.observe('backgroundColor', updateCanvasStyle);
-cfg.observe('cellSize', updateCanvasStyle);
-cfg.observe('drawGrid', updateCanvasStyle);
+const uiCanvas = canvas.ui.el;
+let mouseMoveCount = 0;
+const onMouseMove = (e: MouseEvent) => {
+  mouseMoveCount += 1;
+  toggleCell(getCellCoord(e), true);
+  drawGame();
+};
+
+uiCanvas.addEventListener("mousedown", () => {
+  uiCanvas.addEventListener("mousemove", onMouseMove);
+});
+
+uiCanvas.addEventListener("mouseup", (e) => {
+  uiCanvas.removeEventListener("mousemove", onMouseMove);
+  if(!mouseMoveCount) {
+    toggleCell(getCellCoord(e))
+    drawGame();
+  };
+  mouseMoveCount = 0;
+});
 
 const getIndex = (len: number, pos: number) =>
   pos > len ? 0 : pos < 0 ? len : pos;
@@ -63,7 +81,7 @@ export const game = (field: Cell[][]) => {
 
 export const nextFrame = () => {
   cfg.field = game(cfg.field);
-  drawCells(ctx, cfg.field);
+  drawGame();
 };
 
 export const startGame = () => {
