@@ -72,7 +72,9 @@
     cellSize = 10;
     horCount = 120;
     verCount = 50;
+    gridWidth = 1;
     speed = 1;
+    // defaultInterval / interval
     interval = 100;
     // 0.1s
     defaultInterval = 100;
@@ -82,9 +84,7 @@
     cursorColor = "#aa0000";
     gridColor = "#808080";
     drawGrid = true;
-    gridWidth = 1;
     dencityOfRandomFill = 0.5;
-    prevField = [];
     field;
     constructor(field) {
       this.field = field || this.initField;
@@ -411,12 +411,11 @@
   };
   var nextField = (field) => {
     const newField = cfg.initField;
-    cfg.prevField = field;
     for (let y = 0; y < field.length; y++) {
       const row = newField[y];
       for (let x = 0; x < row.length; x++) {
-        const neighbours = getNeighbours(cfg.prevField, x, y);
-        if (!cfg.prevField[y][x]) {
+        const neighbours = getNeighbours(field, x, y);
+        if (!field[y][x]) {
           if (neighbours === 3) {
             row[x] = true;
           }

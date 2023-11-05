@@ -33,15 +33,14 @@ const getNeighbours = (field: Cell[][], x: number, y: number) => {
 
 export const nextField = (field: Cell[][]) => {
   const newField: Cell[][] = cfg.initField;
-  cfg.prevField = field;
 
   for (let y = 0; y < field.length; y++) {
     const row = newField[y];
 
     for (let x = 0; x < row.length; x++) {
-      const neighbours = getNeighbours(cfg.prevField, x, y);
+      const neighbours = getNeighbours(field, x, y);
 
-      if (!cfg.prevField[y][x]) {
+      if (!field[y][x]) {
         if (neighbours === 3) {
           row[x] = true;
         }
