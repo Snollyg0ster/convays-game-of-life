@@ -157,22 +157,22 @@
     const canvasCont2 = document.createElement("div");
     const gameCanvas = document.createElement("canvas");
     const gridCanvas = document.createElement("canvas");
-    const uiCanvas2 = document.createElement("canvas");
+    const uiCanvas = document.createElement("canvas");
     const gameCtx = gameCanvas.getContext("2d");
     const gridCtx = gridCanvas.getContext("2d");
-    const uiCtx = uiCanvas2.getContext("2d");
-    const canvases = [gameCanvas, gridCanvas, uiCanvas2];
+    const uiCtx = uiCanvas.getContext("2d");
+    const canvases = [gameCanvas, gridCanvas, uiCanvas];
     const canvas2 = {
       game: { el: gameCanvas, ctx: gameCtx },
       grid: { el: gridCanvas, ctx: gridCtx },
-      ui: { el: uiCanvas2, ctx: uiCtx }
+      ui: { el: uiCanvas, ctx: uiCtx }
     };
     canvasCont2.append(...canvases);
     canvasCont2.classList.add("canvas-cont");
     gameCanvas.id = "game-canvas";
     gridCanvas.id = "grid-canvas";
-    uiCanvas2.id = "ui-canvas";
-    [gridCanvas, uiCanvas2].forEach((canvas3) => canvas3.classList.add("canvas"));
+    uiCanvas.id = "ui-canvas";
+    [gridCanvas, uiCanvas].forEach((canvas3) => canvas3.classList.add("canvas"));
     const updateCanvas2 = (canvas3, i) => {
       canvas3.height = cfg.gameHeight;
       canvas3.width = cfg.gameWidth;
@@ -187,17 +187,18 @@
     changeCanvasColor2();
     return { canvas: canvas2, canvasCont: canvasCont2, updateCanvasStyle: updateCanvasStyle2, changeCanvasColor: changeCanvasColor2 };
   };
-  var createGameButton = (cb, isRuning = false) => {
+  var createGameButton = (game2, isRuning = false) => {
     const gameButton2 = document.createElement("button");
     gameButton2.textContent = isRuning ? STOP_TEXT : START_TEXT;
-    let stopGame;
+    game2.observe("isRunning", (isRuning2) => {
+      gameButton2.textContent = isRuning2 ? STOP_TEXT : START_TEXT;
+    });
     gameButton2.onclick = () => {
       isRuning = !isRuning;
-      gameButton2.textContent = isRuning ? STOP_TEXT : START_TEXT;
       if (isRuning) {
-        stopGame = cb();
+        game2.start();
       } else {
-        stopGame?.();
+        game2.stop?.();
       }
     };
     return gameButton2;
@@ -222,23 +223,23 @@
     } = props;
     const cont = document.createElement("div");
     const label = document.createElement("label");
-    const input = document.createElement("input");
-    const onChangeProps = { ...props, cont, label, input };
+    const input2 = document.createElement("input");
+    const onChangeProps = { ...props, cont, label, input: input2 };
     labelClass && label.classList.add(labelClass);
-    inputClass && input.classList.add(inputClass);
+    inputClass && input2.classList.add(inputClass);
     contClass && cont.classList.add(contClass);
     cont.classList.add(hor ? "row" : "col");
-    type && (input.type = type);
+    type && (input2.type = type);
     label.textContent = title;
-    cont.append(label, input);
+    cont.append(label, input2);
     Object.entries(attrs).forEach(
-      ([key, val]) => val !== null && input.setAttribute(key, `${val}`)
+      ([key, val]) => val !== null && input2.setAttribute(key, `${val}`)
     );
-    input.setAttribute("value", format ? format(cfg[field]) : `${cfg[field]}`);
+    input2.setAttribute("value", format ? format(cfg[field]) : `${cfg[field]}`);
     cfg.observe(field, (val) => {
-      input.value = format ? format(val) : `${val}`;
+      input2.value = format ? format(val) : `${val}`;
     });
-    input.oninput = (e) => {
+    input2.oninput = (e) => {
       assertEventTarget(e, HTMLInputElement);
       const val = parse ? parse(e.target.value) : e.target.value;
       cfg[field] = val;
@@ -394,25 +395,6 @@
   var { canvas, canvasCont, updateCanvasStyle, changeCanvasColor } = createCanvas();
   var drawGame = () => renderCells(canvas.game.ctx, cfg.field);
   var drawGrid = () => cfg.cellSize > 1 && cfg.drawGrid && renderGrid(canvas.grid.ctx);
-  var uiCanvas = canvas.ui.el;
-  var mouseMoveCount = 0;
-  var onMouseMove = (e) => {
-    mouseMoveCount += 1;
-    toggleCell(getCellCoord(e), true);
-    drawGame();
-  };
-  uiCanvas.addEventListener("mousedown", () => {
-    uiCanvas.addEventListener("mousemove", onMouseMove);
-  });
-  uiCanvas.addEventListener("mouseup", (e) => {
-    uiCanvas.removeEventListener("mousemove", onMouseMove);
-    if (!mouseMoveCount) {
-      toggleCell(getCellCoord(e));
-      drawGame();
-    }
-    ;
-    mouseMoveCount = 0;
-  });
   var getIndex = (len, pos) => pos > len ? 0 : pos < 0 ? len : pos;
   var getNeighbours = (field, x, y) => {
     let neighbours = field[y][x] ? -1 : 0;
@@ -427,7 +409,7 @@
     }
     return neighbours;
   };
-  var game = (field) => {
+  var nextField = (field) => {
     const newField = cfg.initField;
     cfg.prevField = field;
     for (let y = 0; y < field.length; y++) {
@@ -450,7 +432,7 @@
     return newField;
   };
   var nextFrame = () => {
-    cfg.field = game(cfg.field);
+    cfg.field = nextField(cfg.field);
     drawGame();
   };
   var startGame = () => {
@@ -472,11 +454,33 @@
       run = false;
     };
   };
+  var Game = class {
+    constructor(isRunning = false) {
+      this.isRunning = isRunning;
+    }
+    stop;
+    start() {
+      if (this.isRunning) {
+        return;
+      }
+      const stopGame = startGame();
+      this.isRunning = true;
+      this.stop = () => {
+        stopGame();
+        this.stop = void 0;
+        this.isRunning = false;
+      };
+    }
+  };
+  Game = __decorateClass([
+    observe
+  ], Game);
+  var game = new Game();
 
   // src/layout/index.ts
   var buttonCont = document.createElement("div");
   var root = document.getElementById("root");
-  var gameButton = createGameButton(startGame);
+  var gameButton = createGameButton(game);
   var nextFrameButton = createCbButton(NEXT_FRAME_TEXT, nextFrame);
   var clearButton = createCbButton(CLEAR_TEXT, voidExecutor(cfg.resetField, drawGame));
   var gameSpeed = createGameSpeedSlider();
@@ -557,9 +561,82 @@
     cfg.observe("gridColor", drawGrid);
   };
 
+  // src/input.ts
+  var Input = class {
+    aliases = {
+      toggleStop: ["Space"]
+    };
+    listeners = {};
+    constructor() {
+      this.listeners = this.initListeners;
+    }
+    get initListeners() {
+      return Object.values(this.aliases).flat().reduce((acc, key) => {
+        acc[key] = /* @__PURE__ */ new Set();
+        return acc;
+      }, {});
+    }
+    onKeyDown(e) {
+      const code = e.code;
+      if (this.listeners[code]) {
+        this.listeners[code].forEach((cb) => cb());
+      }
+    }
+    startListening() {
+      document.addEventListener("keydown", this.onKeyDown);
+    }
+    stopListening() {
+      document.removeEventListener("keydown", this.onKeyDown);
+    }
+    addListener(name, cb) {
+      this.aliases[name].forEach((code) => {
+        this.listeners[code].add(cb);
+      });
+    }
+    deleteListener(name, cb) {
+      this.aliases[name].forEach((code) => {
+        this.listeners[code].delete(cb);
+      });
+    }
+    deleteListeners() {
+      this.listeners = this.initListeners;
+    }
+  };
+  __decorateClass([
+    bind
+  ], Input.prototype, "onKeyDown", 1);
+  var input = new Input();
+
+  // src/listeners.ts
+  var addListeners = () => {
+    const uiCanvas = canvas.ui.el;
+    let mouseMoveCount = 0;
+    const onMouseMove = (e) => {
+      mouseMoveCount += 1;
+      toggleCell(getCellCoord(e), true);
+      drawGame();
+    };
+    uiCanvas.addEventListener("mousedown", () => {
+      uiCanvas.addEventListener("mousemove", onMouseMove);
+    });
+    uiCanvas.addEventListener("mouseup", (e) => {
+      uiCanvas.removeEventListener("mousemove", onMouseMove);
+      if (!mouseMoveCount) {
+        toggleCell(getCellCoord(e));
+        drawGame();
+      }
+      mouseMoveCount = 0;
+    });
+    input.startListening();
+    input.addListener("toggleStop", () => {
+      game.isRunning ? game.stop?.() : game.start();
+    });
+  };
+
   // src/index.ts
   root && root.append(canvasCont, buttonCont);
   reflexy();
   drawGame();
   drawGrid();
+  addListeners();
 })();

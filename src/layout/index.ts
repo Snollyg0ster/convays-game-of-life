@@ -19,13 +19,13 @@ import {
   RANDOM_TEXT,
 } from "../consts/text";
 import { preloadedField } from "../consts/defaults";
-import { startGame, nextFrame, drawGame } from "../game";
+import { game, nextFrame, drawGame } from "../game";
 import { voidExecutor } from "../utils/common";
 
 export const buttonCont = document.createElement("div");
 export const root = document.getElementById("root");
 
-const gameButton = createGameButton(startGame);
+const gameButton = createGameButton(game);
 const nextFrameButton = createCbButton(NEXT_FRAME_TEXT, nextFrame);
 const clearButton = createCbButton(CLEAR_TEXT, voidExecutor(cfg.resetField, drawGame));
 const gameSpeed = createGameSpeedSlider();

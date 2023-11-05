@@ -16,7 +16,7 @@ export function assertEventTarget<Element extends Function>(
 
 export const doNothing = <T = any>() => (val: string) => val as T;
 
-export const voidExecutor = (...fns: (() => void)[]) => () => fns.forEach(fn => fn());
+export const voidExecutor = (...fns: VoidFn[]) => () => fns.forEach(fn => fn());
 
 export const getCellCoord = (
   e: MouseEvent,

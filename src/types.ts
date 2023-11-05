@@ -28,7 +28,7 @@ export interface InputElements {
 export interface InputProps<T>  {
   type?: string;
   hor?: boolean;
-  attrs?: Record<string, any>
+  attrs?: Indexed;
   labelClass?: string;
   inputClass?: string;
   contClass?: string;
