@@ -37,7 +37,7 @@ const cellSizeInput = createNumberInput("Размер клетки (px)", "cellS
 const drawGridButton = createCheckbox(GRID_TEXT, "drawGrid");
 
 const logFunction = () =>
-  console.log(
+  console.log( 
     JSON.stringify(
       cfg.field.map((row) => row.map((cell) => !!cell))
     ).replaceAll("],", "],\n")

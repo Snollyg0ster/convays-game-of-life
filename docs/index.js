@@ -81,10 +81,12 @@
     // 0.1s
     backgroundColor = "black";
     cellColor = "#ffffff";
-    cursorColor = "#aa0000";
+    cursorColor = "#f4a261";
     gridColor = "#808080";
+    selectionColor = "#e76f51";
     drawGrid = true;
     dencityOfRandomFill = 0.5;
+    selection = null;
     field;
     constructor(field) {
       this.field = field || this.initField;
@@ -105,13 +107,28 @@
     }
     resetField() {
       this.field = this.initField;
-      this.prevField = this.initField;
-      console.log("resetField");
+    }
+    setSelection(coord) {
+      if (!coord) {
+        this.selection = null;
+        return;
+      }
+      if (this.selection) {
+        const { center } = this.selection;
+        const [x1, x2] = center.x <= coord.x ? [center.x, coord.x] : [coord.x, center.x];
+        const [y1, y2] = center.y <= coord.y ? [center.y, coord.y] : [coord.y, center.y];
+        this.selection = { start: { x: x1, y: y1 }, end: { x: x2, y: y2 }, center };
+      } else {
+        this.selection = { start: coord, end: coord, center: coord };
+      }
     }
   };
   __decorateClass([
     bind
   ], Config.prototype, "resetField", 1);
+  __decorateClass([
+    bind
+  ], Config.prototype, "setSelection", 1);
   Config = __decorateClass([
     observe
   ], Config);
@@ -149,7 +166,10 @@
     if (y === cfg.verCount) {
       return;
     }
+    const prevCellValue = cfg.field[y][x];
     cfg.field[y][x] = alive === void 0 ? !cfg.field[y][x] : alive;
+    const isCellChange = prevCellValue !== cfg.field[y][x];
+    return isCellChange;
   };
 
   // src/layout/elements.ts
@@ -347,8 +367,9 @@
       return;
     }
     clearCtx(ctx);
+    const unitSize = cfg.cellSize + cfg.gridWidth;
     for (let y = 1; y < cfg.verCount; y++) {
-      const yPos = y * (cfg.cellSize + cfg.gridWidth) - cfg.gridWidth;
+      const yPos = y * unitSize - cfg.gridWidth;
       const gameWidth = cfg.gameWidth;
       ctx.beginPath();
       ctx.strokeStyle = cfg.gridColor;
@@ -359,7 +380,7 @@
       ctx.closePath();
     }
     for (let y = 1; y < cfg.horCount; y++) {
-      const xPos = y * (cfg.cellSize + cfg.gridWidth) - cfg.gridWidth;
+      const xPos = y * unitSize - cfg.gridWidth;
       const gameHeight = cfg.gameHeight;
       ctx.beginPath();
       ctx.strokeStyle = cfg.gridColor;
@@ -377,11 +398,12 @@
     clearCtx(ctx);
     ctx.fillStyle = cfg.cellColor;
     const gridWidth = cfg.drawGrid ? cfg.gridWidth : 0;
+    const unitSize = cfg.cellSize + gridWidth;
     for (let y = 0; y < field.length; y++) {
       const row = field[y];
-      const yPos = y * (cfg.cellSize + gridWidth);
+      const yPos = y * unitSize;
       for (let x = 0; x < row.length; x++) {
-        const xPos = x * (cfg.cellSize + gridWidth);
+        const xPos = x * unitSize;
         const cell = row[x];
         if (!cell) {
           continue;
@@ -390,6 +412,32 @@
       }
     }
   }
+  var getSelCoord = ({ x: xA, y: yA }, { x: xB, y: yB }) => {
+    const gridWidth = cfg.drawGrid ? cfg.gridWidth : 0;
+    const unitSize = cfg.cellSize + gridWidth;
+    const y = yA * unitSize;
+    const x = xA * unitSize;
+    const yEnd = yB * unitSize + unitSize - gridWidth;
+    const xEnd = xB * unitSize + unitSize - gridWidth;
+    return { x, y, xEnd, yEnd, width: xEnd - x, height: yEnd - y };
+  };
+  var renderUi = (ctx, coord, selecting = false) => {
+    if (!ctx) {
+      return;
+    }
+    clearCtx(ctx);
+    if (cfg.selection) {
+      const { x: x2, y: y2, width: width2, height: height2 } = getSelCoord(cfg.selection.start, cfg.selection.end);
+      ctx.strokeStyle = cfg.selectionColor;
+      ctx.strokeRect(x2, y2, width2, height2);
+    }
+    if (!coord || selecting) {
+      return;
+    }
+    const { x, y, width, height } = getSelCoord(coord, coord);
+    ctx.strokeStyle = cfg.cursorColor;
+    ctx.strokeRect(x, y, width, height);
+  };
 
   // src/game.ts
   var { canvas, canvasCont, updateCanvasStyle, changeCanvasColor } = createCanvas();
@@ -563,15 +611,34 @@
   // src/input.ts
   var Input = class {
     aliases = {
-      toggleStop: ["Space"]
+      toggleStop: ["Space"],
+      select: ["MetaLeft"]
     };
+    keyAliases = {};
     listeners = {};
+    pressed;
     constructor() {
       this.listeners = this.initListeners;
+      this.keyAliases = this.initKeyAliases;
+      this.pressed = this.initPressed;
+    }
+    get initPressed() {
+      return Object.keys(this.aliases).reduce((acc, key) => {
+        acc[key] = false;
+        return acc;
+      }, {});
     }
     get initListeners() {
       return Object.values(this.aliases).flat().reduce((acc, key) => {
         acc[key] = /* @__PURE__ */ new Set();
+        return acc;
+      }, {});
+    }
+    get initKeyAliases() {
+      return Object.entries(this.aliases).reduce((acc, [alias, keys]) => {
+        keys.forEach((key) => {
+          acc[key] = alias;
+        });
         return acc;
       }, {});
     }
@@ -580,12 +647,23 @@
       if (this.listeners[code]) {
         this.listeners[code].forEach((cb) => cb());
       }
+      if (this.keyAliases[code]) {
+        this.pressed[this.keyAliases[code]] = true;
+      }
+    }
+    onKeyUp(e) {
+      const code = e.code;
+      if (this.keyAliases[code]) {
+        this.pressed[this.keyAliases[code]] = false;
+      }
     }
     startListening() {
       document.addEventListener("keydown", this.onKeyDown);
+      document.addEventListener("keyup", this.onKeyUp);
     }
     stopListening() {
       document.removeEventListener("keydown", this.onKeyDown);
+      document.removeEventListener("keyup", this.onKeyUp);
     }
     addListener(name, cb) {
       this.aliases[name].forEach((code) => {
@@ -600,32 +678,61 @@
     deleteListeners() {
       this.listeners = this.initListeners;
     }
+    getPressed(name) {
+      return this.pressed[name];
+    }
   };
   __decorateClass([
     bind
   ], Input.prototype, "onKeyDown", 1);
+  __decorateClass([
+    bind
+  ], Input.prototype, "onKeyUp", 1);
   var input = new Input();
 
   // src/listeners.ts
   var addListeners = () => {
     const uiCanvas = canvas.ui.el;
     let mouseMoveCount = 0;
+    let mouseDown = false;
+    let cellCoord;
     const onMouseMove = (e) => {
-      mouseMoveCount += 1;
-      toggleCell(getCellCoord(e), true);
-      drawGame();
+      const prevCoord = cellCoord;
+      cellCoord = getCellCoord(e);
+      if (prevCoord?.x === cellCoord.x && prevCoord?.y === cellCoord.y) {
+        return;
+      }
+      const selectPressed = input.getPressed("select");
+      if (selectPressed && mouseDown) {
+        cfg.setSelection(cellCoord);
+      }
+      renderUi(canvas.ui.ctx, cellCoord, selectPressed);
+      if (mouseDown && !selectPressed) {
+        mouseMoveCount += 1;
+        const isCellChanged = toggleCell(getCellCoord(e), true);
+        isCellChanged && drawGame();
+        return;
+      }
     };
     uiCanvas.addEventListener("mousedown", () => {
-      uiCanvas.addEventListener("mousemove", onMouseMove);
+      if (!input.getPressed("select")) {
+        cfg.setSelection(null);
+        renderUi(canvas.ui.ctx, cellCoord);
+      }
+      mouseDown = true;
     });
     uiCanvas.addEventListener("mouseup", (e) => {
-      uiCanvas.removeEventListener("mousemove", onMouseMove);
-      if (!mouseMoveCount) {
+      if (!mouseMoveCount && !input.getPressed("select")) {
         toggleCell(getCellCoord(e));
         drawGame();
       }
       mouseMoveCount = 0;
+      mouseDown = false;
     });
+    uiCanvas.addEventListener("mouseleave", () => {
+      mouseDown = false;
+    });
+    uiCanvas.addEventListener("mousemove", onMouseMove);
     input.startListening();
     input.addListener("toggleStop", () => {
       game.isRunning ? game.stop?.() : game.start();

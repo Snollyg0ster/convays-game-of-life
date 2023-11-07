@@ -1,5 +1,6 @@
 import { Observed, bind, observe } from "./utils/decorators";
-import { Cell } from "./types";
+import { Cell, CellCoord, Selection } from "./types";
+import { copy } from "./utils/common";
 
 @observe
 class Config {
@@ -14,11 +15,14 @@ class Config {
 
   public backgroundColor = "black";
   public cellColor = "#ffffff";
-  public cursorColor = "#aa0000";
+  public cursorColor = "#f4a261";
   public gridColor = "#808080";
+  public selectionColor = "#e76f51";
 
   public drawGrid = true;
   public dencityOfRandomFill = 0.5;
+
+  public selection: Selection = null;
 
   public field: Cell[][];
 
@@ -46,8 +50,24 @@ class Config {
   @bind
   public resetField() {
     this.field = this.initField;
-    this.prevField = this.initField;
-    console.log('resetField')
+  }
+
+  @bind
+  public setSelection(coord?: CellCoord | null) {
+    if(!coord) {
+      this.selection = null;
+      return;
+    }
+
+    if (this.selection) {
+      const {center} = this.selection;
+      const [x1, x2] = center.x <= coord.x ? [center.x, coord.x] : [coord.x, center.x];
+      const [y1, y2] = center.y <= coord.y ? [center.y, coord.y] : [coord.y, center.y];
+
+      this.selection = {start: {x: x1, y: y1}, end: {x: x2, y: y2}, center};
+    } else {
+      this.selection = {start: coord, end: coord, center: coord};
+    }
   }
 }
 

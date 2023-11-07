@@ -1,5 +1,5 @@
 import { cfg } from "../config";
-import { Coord } from "../types";
+import { CellCoord, Coord } from "../types";
 
 export const copy = <T>(val: T) => JSON.parse(JSON.stringify(val));
 
@@ -28,10 +28,16 @@ export const getCellCoord = (
   return {x, y}
 };
 
-export const toggleCell = ({x, y}: Coord, alive?: boolean) => {
+export const toggleCell = ({x, y}: CellCoord, alive?: boolean) => {
   if (y === cfg.verCount) {
     return;
   }
 
+  const prevCellValue = cfg.field[y][x];
+
   cfg.field[y][x] = alive === undefined ? !cfg.field[y][x] : alive;
+
+  const isCellChange = prevCellValue !== cfg.field[y][x];
+
+  return isCellChange;
 }

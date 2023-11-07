@@ -1,6 +1,6 @@
 import { Cell } from "./types";
 import { cfg } from "./config";
-import { renderCells, renderGrid } from "./render";
+import { renderCells, renderGrid, renderUi } from "./render";
 import { createCanvas } from "./layout/elements";
 import { Observed, observe } from "./utils/decorators";
 
