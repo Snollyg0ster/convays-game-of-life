@@ -4,7 +4,7 @@ import { bind } from "./utils/decorators";
 class Input {
     private aliases = {
         toggleStop: ['Space'],
-        select: ['MetaLeft']
+        select: ['MetaLeft', 'ControlLeft']
     } satisfies Indexed<string[]>;
     private shortcuts = {
         copy: [['MetaLeft', 'ControlLeft'], 'KeyC'],

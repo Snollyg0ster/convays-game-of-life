@@ -600,7 +600,7 @@
   var Input = class {
     aliases = {
       toggleStop: ["Space"],
-      select: ["MetaLeft"]
+      select: ["MetaLeft", "ControlLeft"]
     };
     shortcuts = {
       copy: [["MetaLeft", "ControlLeft"], "KeyC"],
