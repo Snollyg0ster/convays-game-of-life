@@ -1,4 +1,4 @@
-import { START_TEXT, STOP_TEXT, SPEED_TEXT } from "../consts/text";
+import { START_TEXT, STOP_TEXT, SPEED_TEXT, START_TITLE } from "../consts/text";
 import Config, { cfg } from "../config";
 import {
   InputProps,
@@ -7,6 +7,8 @@ import {
   NumberInputProps,
 } from "../types";
 import { assertEventTarget } from "../utils/common";
+import { Game } from "../game";
+import { Observed } from "../utils/decorators";
 
 export const createCanvas = () => {
   const canvasCont = document.createElement("div");
@@ -49,26 +51,29 @@ export const createCanvas = () => {
   return { canvas, canvasCont, updateCanvasStyle, changeCanvasColor };
 };
 
-export const createGameButton = (cb: () => () => void, isRuning = false) => {
+export const createGameButton = (game: Observed<Game>, isRuning = false) => {
   const gameButton = document.createElement("button");
+  gameButton.title = START_TITLE;
   gameButton.textContent = isRuning ? STOP_TEXT : START_TEXT;
-  let stopGame: () => void;
+
+  game.observe('isRunning', (isRuning) => {
+    gameButton.textContent = isRuning ? STOP_TEXT : START_TEXT;
+  })
 
   gameButton.onclick = () => {
     isRuning = !isRuning;
-    gameButton.textContent = isRuning ? STOP_TEXT : START_TEXT;
 
     if (isRuning) {
-      stopGame = cb();
+      game.start();
     } else {
-      stopGame?.();
+      game.stop?.();
     }
   };
 
   return gameButton;
 };
 
-export const createCbButton = (title: string, cb: () => void) => {
+export const createCbButton = (title: string, cb: VoidFn) => {
   const button = document.createElement("button");
 
   button.textContent = title;
@@ -175,7 +180,7 @@ export const createNumberInput = (
 export const createCheckbox = (
   title: string,
   field: "drawGrid",
-  onChange?: () => void
+  onChange?: VoidFn
 ) => {
   let checked = cfg[field];
 

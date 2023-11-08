@@ -14,7 +14,7 @@ export type Observed<T> = T & {
 };
 
 class Observer {
-  observers: Record<string, Map<symbol, (val: any, key: any) => void>> = {};
+  observers: Indexed<Map<symbol, (val: any, key: any) => void>> = {};
 
   observe = (key: string, cb: (val: any, key: string) => void) => {
     const id = Symbol("id");
@@ -45,7 +45,7 @@ export function observe<T extends ClassType>(constructor: T) {
       Object.assign(object, new Observer());
 
       return new Proxy(object, {
-        set(target: Record<string, any>, key: string, value) {
+        set(target: Indexed, key: string, value) {
           target[key] = value;
           target.emit(key, value);
           return true;

@@ -1,4 +1,4 @@
-import { Cell } from "./types";
+import { Cell, CellCoord, Coord } from "./types";
 import { cfg } from "./config";
 
 export const clearCtx = (ctx: CanvasRenderingContext2D | null) =>
@@ -11,8 +11,10 @@ export function renderGrid(ctx: CanvasRenderingContext2D | null) {
 
   clearCtx(ctx);
 
+  const unitSize = cfg.cellSize + cfg.gridWidth;
+
   for (let y = 1; y < cfg.verCount; y++) {
-    const yPos = y * (cfg.cellSize + cfg.gridWidth) - cfg.gridWidth;
+    const yPos = y * unitSize - cfg.gridWidth;
     const gameWidth = cfg.gameWidth;
 
     ctx.beginPath();
@@ -25,7 +27,7 @@ export function renderGrid(ctx: CanvasRenderingContext2D | null) {
   }
 
   for (let y = 1; y < cfg.horCount; y++) {
-    const xPos = y * (cfg.cellSize + cfg.gridWidth) - cfg.gridWidth;
+    const xPos = y * unitSize - cfg.gridWidth;
     const gameHeight = cfg.gameHeight;
 
     ctx.beginPath();
@@ -49,13 +51,14 @@ export function renderCells(
   clearCtx(ctx);
   ctx.fillStyle = cfg.cellColor;
   const gridWidth = cfg.drawGrid ? cfg.gridWidth : 0;
+  const unitSize = cfg.cellSize + gridWidth;
 
   for (let y = 0; y < field.length; y++) {
     const row = field[y];
-    const yPos = y * (cfg.cellSize + gridWidth);
+    const yPos = y * unitSize;
 
     for (let x = 0; x < row.length; x++) {
-      const xPos = x * (cfg.cellSize + gridWidth);
+      const xPos = x * unitSize;
       const cell = row[x];
 
       if (!cell) {
@@ -65,4 +68,37 @@ export function renderCells(
       ctx.fillRect(xPos, yPos, cfg.cellSize, cfg.cellSize);
     }
   }
+}
+
+const getSelCoord = ({x: xA, y: yA}: CellCoord, {x: xB, y: yB}: CellCoord) => {
+  const gridWidth = cfg.drawGrid ? cfg.gridWidth : 0;
+  const unitSize = cfg.cellSize + gridWidth;
+  const y = yA * unitSize;
+  const x = xA * unitSize;
+  const yEnd = yB * unitSize + unitSize - gridWidth;
+  const xEnd = xB * unitSize + unitSize - gridWidth;
+
+  return {x, y, xEnd, yEnd, width: xEnd - x, height: yEnd - y};
+}
+
+export const renderUi = (ctx: CanvasRenderingContext2D | null, coord?: CellCoord, selecting = false) => {
+  if (!ctx) {
+    return;
+  }
+
+  clearCtx(ctx);
+
+  if (cfg.selection) {
+    const {x, y, width, height} = getSelCoord(cfg.selection.start, cfg.selection.end);
+    ctx.strokeStyle = cfg.selectionColor;
+    ctx.strokeRect(x, y, width, height);
+  }
+
+  if (!coord || selecting) {
+    return;
+  }
+
+  const {x, y, width, height} = getSelCoord(coord, coord);
+  ctx.strokeStyle = cfg.cursorColor;
+  ctx.strokeRect(x, y, width, height);
 }

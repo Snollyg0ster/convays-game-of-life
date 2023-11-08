@@ -1,33 +1,12 @@
 import { Cell } from "./types";
 import { cfg } from "./config";
-import { renderCells, renderGrid } from "./render";
+import { renderCells, renderGrid, renderUi } from "./render";
 import { createCanvas } from "./layout/elements";
-import { getCellCoord, toggleCell } from "./utils/common";
+import { Observed, observe } from "./utils/decorators";
 
 export const { canvas, canvasCont, updateCanvasStyle, changeCanvasColor } = createCanvas();
 export const drawGame = () => renderCells(canvas.game.ctx, cfg.field);
 export const drawGrid = () => cfg.cellSize > 1 && cfg.drawGrid && renderGrid(canvas.grid.ctx);
-
-const uiCanvas = canvas.ui.el;
-let mouseMoveCount = 0;
-const onMouseMove = (e: MouseEvent) => {
-  mouseMoveCount += 1;
-  toggleCell(getCellCoord(e), true);
-  drawGame();
-};
-
-uiCanvas.addEventListener("mousedown", () => {
-  uiCanvas.addEventListener("mousemove", onMouseMove);
-});
-
-uiCanvas.addEventListener("mouseup", (e) => {
-  uiCanvas.removeEventListener("mousemove", onMouseMove);
-  if(!mouseMoveCount) {
-    toggleCell(getCellCoord(e))
-    drawGame();
-  };
-  mouseMoveCount = 0;
-});
 
 const getIndex = (len: number, pos: number) =>
   pos > len ? 0 : pos < 0 ? len : pos;
@@ -52,17 +31,16 @@ const getNeighbours = (field: Cell[][], x: number, y: number) => {
   return neighbours;
 };
 
-export const game = (field: Cell[][]) => {
+export const nextField = (field: Cell[][]) => {
   const newField: Cell[][] = cfg.initField;
-  cfg.prevField = field;
 
   for (let y = 0; y < field.length; y++) {
     const row = newField[y];
 
     for (let x = 0; x < row.length; x++) {
-      const neighbours = getNeighbours(cfg.prevField, x, y);
+      const neighbours = getNeighbours(field, x, y);
 
-      if (!cfg.prevField[y][x]) {
+      if (!field[y][x]) {
         if (neighbours === 3) {
           row[x] = true;
         }
@@ -80,7 +58,7 @@ export const game = (field: Cell[][]) => {
 };
 
 export const nextFrame = () => {
-  cfg.field = game(cfg.field);
+  cfg.field = nextField(cfg.field);
   drawGame();
 };
 
@@ -108,3 +86,27 @@ export const startGame = () => {
     run = false;
   };
 };
+
+@observe
+export class Game {
+  constructor(public isRunning = false){}
+
+  public stop?: VoidFn;
+
+  public start() {
+    if (this.isRunning) {
+      return;
+    }
+
+    const stopGame = startGame();
+
+    this.isRunning = true;
+    this.stop = () => {
+      stopGame()
+      this.stop = undefined;
+      this.isRunning = false;
+    };
+  }
+}
+
+export const game = new Game() as Observed<Game>;

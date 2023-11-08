@@ -19,6 +19,10 @@ export interface Coord {
   y: number;
 }
 
+export type Selection = Record<'start' | 'end' | 'center', CellCoord>;
+
+export interface CellCoord extends Coord {};
+
 export interface InputElements {
   cont: HTMLDivElement;
   label: HTMLLabelElement;
@@ -28,7 +32,7 @@ export interface InputElements {
 export interface InputProps<T>  {
   type?: string;
   hor?: boolean;
-  attrs?: Record<string, any>
+  attrs?: Indexed;
   labelClass?: string;
   inputClass?: string;
   contClass?: string;
