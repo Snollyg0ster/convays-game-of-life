@@ -136,6 +136,7 @@
 
   // src/consts/text.ts
   var START_TEXT = "\u0421\u0442\u0430\u0440\u0442 \u{1F680}";
+  var START_TITLE = "Space (\u041F\u0440\u043E\u0431\u0435\u043B)";
   var STOP_TEXT = "\u0421\u0442\u043E\u043F \u26D4\uFE0F";
   var CLEAR_TEXT = "\u041E\u0447\u0438\u0441\u0442\u0438\u0442\u044C \u232B";
   var NEXT_FRAME_TEXT = "\u0414\u0430\u043B\u0435\u0435 \u23ED\uFE0F";
@@ -149,6 +150,7 @@
   var GRID_TEXT = "\u0420\u0438\u0441\u043E\u0432\u0430\u0442\u044C \u0441\u0435\u0442\u043A\u0443";
 
   // src/utils/common.ts
+  var append = (array, item) => array ? [...array, item] : [item];
   function assertEventTarget(event, element) {
     if (event.target && event.target instanceof element) {
       return;
@@ -156,21 +158,6 @@
     throw Error(`Target is not instance of ${element}`);
   }
   var voidExecutor = (...fns) => () => fns.forEach((fn) => fn());
-  var getCellCoord = (e) => {
-    const gridWidth = cfg.drawGrid ? cfg.gridWidth : 0;
-    const x = ~~(e.offsetX / (cfg.cellSize + gridWidth));
-    const y = ~~(e.offsetY / (cfg.cellSize + gridWidth));
-    return { x, y };
-  };
-  var toggleCell = ({ x, y }, alive) => {
-    if (y === cfg.verCount) {
-      return;
-    }
-    const prevCellValue = cfg.field[y][x];
-    cfg.field[y][x] = alive === void 0 ? !cfg.field[y][x] : alive;
-    const isCellChange = prevCellValue !== cfg.field[y][x];
-    return isCellChange;
-  };
 
   // src/layout/elements.ts
   var createCanvas = () => {
@@ -209,6 +196,7 @@
   };
   var createGameButton = (game2, isRuning = false) => {
     const gameButton2 = document.createElement("button");
+    gameButton2.title = START_TITLE;
     gameButton2.textContent = isRuning ? STOP_TEXT : START_TEXT;
     game2.observe("isRunning", (isRuning2) => {
       gameButton2.textContent = isRuning2 ? STOP_TEXT : START_TEXT;
@@ -614,25 +602,19 @@
       toggleStop: ["Space"],
       select: ["MetaLeft"]
     };
-    keyAliases = {};
+    shortcuts = {
+      copy: [["MetaLeft", "ControlLeft"], "KeyC"],
+      paste: [["MetaLeft", "ControlLeft"], "KeyV"]
+    };
     listeners = {};
-    pressed;
+    shortcutListeners = {};
+    pressed = {};
+    aliasesPressed = {};
+    codeAliases;
+    codeShortcuts;
     constructor() {
-      this.listeners = this.initListeners;
-      this.keyAliases = this.initKeyAliases;
-      this.pressed = this.initPressed;
-    }
-    get initPressed() {
-      return Object.keys(this.aliases).reduce((acc, key) => {
-        acc[key] = false;
-        return acc;
-      }, {});
-    }
-    get initListeners() {
-      return Object.values(this.aliases).flat().reduce((acc, key) => {
-        acc[key] = /* @__PURE__ */ new Set();
-        return acc;
-      }, {});
+      this.codeAliases = this.initKeyAliases;
+      this.codeShortcuts = this.initCodeShortcuts;
     }
     get initKeyAliases() {
       return Object.entries(this.aliases).reduce((acc, [alias, keys]) => {
@@ -642,19 +624,54 @@
         return acc;
       }, {});
     }
+    get initCodeShortcuts() {
+      return Object.entries(this.shortcuts).reduce((acc, [shortcut, keys]) => {
+        keys.forEach((key) => {
+          if (typeof key === "string") {
+            acc[key] = append(acc[key], shortcut);
+          } else {
+            key.forEach((k) => {
+              acc[k] = append(acc[k], shortcut);
+            });
+          }
+        });
+        return acc;
+      }, {});
+    }
     onKeyDown(e) {
       const code = e.code;
+      this.pressed[code] = true;
       if (this.listeners[code]) {
         this.listeners[code].forEach((cb) => cb());
       }
-      if (this.keyAliases[code]) {
-        this.pressed[this.keyAliases[code]] = true;
+      if (this.codeAliases[code]) {
+        this.aliasesPressed[this.codeAliases[code]] = true;
       }
+      this.runShortcutsListener(code);
+    }
+    runShortcutsListener(code) {
+      if (!this.codeShortcuts[code]) {
+        return;
+      }
+      this.codeShortcuts[code].every((shortcut) => {
+        const listeners = this.shortcutListeners[shortcut];
+        if (!listeners) {
+          return;
+        }
+        const shortcutCodes = this.shortcuts;
+        const isPressed = shortcutCodes[shortcut].every(
+          (key) => typeof key === "string" ? this.pressed[key] : key.some((k) => this.pressed[k])
+        );
+        if (isPressed) {
+          listeners.forEach((cb) => cb());
+        }
+      });
     }
     onKeyUp(e) {
       const code = e.code;
-      if (this.keyAliases[code]) {
-        this.pressed[this.keyAliases[code]] = false;
+      delete this.pressed[code];
+      if (this.codeAliases[code]) {
+        this.aliasesPressed[this.codeAliases[code]] = false;
       }
     }
     startListening() {
@@ -665,21 +682,30 @@
       document.removeEventListener("keydown", this.onKeyDown);
       document.removeEventListener("keyup", this.onKeyUp);
     }
-    addListener(name, cb) {
+    addAliasListener(name, cb) {
       this.aliases[name].forEach((code) => {
-        this.listeners[code].add(cb);
+        (this.listeners[code] || (this.listeners[code] = /* @__PURE__ */ new Set())).add(cb);
       });
     }
-    deleteListener(name, cb) {
+    deleteAliasListener(name, cb) {
       this.aliases[name].forEach((code) => {
         this.listeners[code].delete(cb);
       });
     }
-    deleteListeners() {
-      this.listeners = this.initListeners;
+    deleteShortcutListener(name, cb) {
+      (this.shortcutListeners[name] || (this.shortcutListeners[name] = /* @__PURE__ */ new Set())).delete(cb);
     }
-    getPressed(name) {
-      return this.pressed[name];
+    addShortcutListener(name, cb) {
+      (this.shortcutListeners[name] || (this.shortcutListeners[name] = /* @__PURE__ */ new Set())).add(cb);
+    }
+    deleteListeners() {
+      this.listeners = {};
+    }
+    deleteShortcutListeners() {
+      this.shortcutListeners = {};
+    }
+    isAliasPressed(name) {
+      return !!this.aliasesPressed[name];
     }
   };
   __decorateClass([
@@ -690,40 +716,81 @@
   ], Input.prototype, "onKeyUp", 1);
   var input = new Input();
 
+  // src/utils/field.ts
+  var getCellCoord = (e, options) => {
+    const gridWidth = options.drawGrid ? options.gridWidth : 0;
+    const x = ~~(e.offsetX / (options.cellSize + gridWidth));
+    const y = ~~(e.offsetY / (options.cellSize + gridWidth));
+    return { x, y };
+  };
+  var toggleCell = (field, { x, y }, options, alive) => {
+    if (y === options.verCount) {
+      return;
+    }
+    const prevCellValue = field[y][x];
+    field[y][x] = alive === void 0 ? !field[y][x] : alive;
+    const isCellChange = prevCellValue !== field[y][x];
+    return isCellChange;
+  };
+  var getSelectionField = (field, selection) => {
+    const selectionField = [];
+    const yStart = selection.start.y, yEnd = selection.end.y;
+    const xStart = selection.start.x, xEnd = selection.end.x;
+    for (let y = yStart; y <= yEnd; y++) {
+      const row = [];
+      selectionField.push(row);
+      for (let x = xStart; x <= xEnd; x++) {
+        row[x - xStart] = field[y][x];
+      }
+    }
+    return selectionField;
+  };
+  var getIndex2 = (len, pos) => pos < 0 ? len + pos % len : pos % len;
+  var pasteFieldTo = (pastedField, cursor, options) => {
+    const { field, horCount, verCount } = options;
+    const selectionField = [];
+    const yStart = cursor.y;
+    const xStart = cursor.x;
+    const rowLength = pastedField.length;
+    const columnLength = pastedField[0].length;
+    for (let y = 0; y < rowLength; y++) {
+      const row = field[getIndex2(verCount, yStart + y)];
+      for (let x = 0; x < columnLength; x++) {
+        row[getIndex2(horCount, xStart + x)] = pastedField[y][x];
+      }
+    }
+    return selectionField;
+  };
+
   // src/listeners.ts
   var addListeners = () => {
     const uiCanvas = canvas.ui.el;
     let mouseMoveCount = 0;
     let mouseDown = false;
     let cellCoord;
+    let pasteField;
     const onMouseMove = (e) => {
-      const prevCoord = cellCoord;
-      cellCoord = getCellCoord(e);
-      if (prevCoord?.x === cellCoord.x && prevCoord?.y === cellCoord.y) {
-        return;
-      }
-      const selectPressed = input.getPressed("select");
+      cellCoord = getCellCoord(e, cfg);
+      const selectPressed = input.isAliasPressed("select");
       if (selectPressed && mouseDown) {
         cfg.setSelection(cellCoord);
       }
       renderUi(canvas.ui.ctx, cellCoord, selectPressed);
       if (mouseDown && !selectPressed) {
         mouseMoveCount += 1;
-        const isCellChanged = toggleCell(getCellCoord(e), true);
+        const isCellChanged = toggleCell(cfg.field, getCellCoord(e, cfg), cfg, true);
         isCellChanged && drawGame();
         return;
       }
     };
     uiCanvas.addEventListener("mousedown", () => {
-      if (!input.getPressed("select")) {
-        cfg.setSelection(null);
-        renderUi(canvas.ui.ctx, cellCoord);
-      }
+      cfg.setSelection(null);
+      renderUi(canvas.ui.ctx);
       mouseDown = true;
     });
     uiCanvas.addEventListener("mouseup", (e) => {
-      if (!mouseMoveCount && !input.getPressed("select")) {
-        toggleCell(getCellCoord(e));
+      if (!mouseMoveCount && !input.isAliasPressed("select")) {
+        toggleCell(cfg.field, getCellCoord(e, cfg), cfg);
         drawGame();
       }
       mouseMoveCount = 0;
@@ -734,8 +801,21 @@
     });
     uiCanvas.addEventListener("mousemove", onMouseMove);
     input.startListening();
-    input.addListener("toggleStop", () => {
+    input.addAliasListener("toggleStop", () => {
       game.isRunning ? game.stop?.() : game.start();
+    });
+    input.addShortcutListener("copy", () => {
+      if (cfg.selection) {
+        pasteField = getSelectionField(cfg.field, cfg.selection);
+        cfg.setSelection(null);
+        renderUi(canvas.ui.ctx);
+      }
+    });
+    input.addShortcutListener("paste", () => {
+      if (pasteField && cellCoord) {
+        pasteFieldTo(pasteField, cellCoord, cfg);
+        drawGame();
+      }
     });
   };
 

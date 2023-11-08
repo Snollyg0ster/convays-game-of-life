@@ -1,4 +1,5 @@
 export const START_TEXT = "Старт 🚀";
+export const START_TITLE = "Space (Пробел)";
 export const STOP_TEXT = "Стоп ⛔️";
 export const CLEAR_TEXT = "Очистить ⌫";
 export const NEXT_FRAME_TEXT = "Далее ⏭️";

@@ -19,7 +19,7 @@ export interface Coord {
   y: number;
 }
 
-export type Selection = Record<'start' | 'end' | 'center', CellCoord> | null;
+export type Selection = Record<'start' | 'end' | 'center', CellCoord>;
 
 export interface CellCoord extends Coord {};
 

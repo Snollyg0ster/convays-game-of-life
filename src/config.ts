@@ -22,7 +22,7 @@ class Config {
   public drawGrid = true;
   public dencityOfRandomFill = 0.5;
 
-  public selection: Selection = null;
+  public selection: Selection | null = null;
 
   public field: Cell[][];
 

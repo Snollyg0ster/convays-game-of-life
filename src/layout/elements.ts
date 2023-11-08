@@ -1,4 +1,4 @@
-import { START_TEXT, STOP_TEXT, SPEED_TEXT } from "../consts/text";
+import { START_TEXT, STOP_TEXT, SPEED_TEXT, START_TITLE } from "../consts/text";
 import Config, { cfg } from "../config";
 import {
   InputProps,
@@ -53,6 +53,7 @@ export const createCanvas = () => {
 
 export const createGameButton = (game: Observed<Game>, isRuning = false) => {
   const gameButton = document.createElement("button");
+  gameButton.title = START_TITLE;
   gameButton.textContent = isRuning ? STOP_TEXT : START_TEXT;
 
   game.observe('isRunning', (isRuning) => {
