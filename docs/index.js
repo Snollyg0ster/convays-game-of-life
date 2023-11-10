@@ -427,19 +427,78 @@
     ctx.strokeRect(x, y, width, height);
   };
 
+  // src/utils/field.ts
+  var getCellCoord = (e, options) => {
+    const gridWidth = options.drawGrid ? options.gridWidth : 0;
+    const x = ~~(e.offsetX / (options.cellSize + gridWidth));
+    const y = ~~(e.offsetY / (options.cellSize + gridWidth));
+    return { x, y };
+  };
+  var toggleCell = (field, { x, y }, options, alive) => {
+    if (y === options.verCount) {
+      return;
+    }
+    const prevCellValue = field[y][x];
+    field[y][x] = alive === void 0 ? !field[y][x] : alive;
+    const isCellChange = prevCellValue !== field[y][x];
+    return isCellChange;
+  };
+  var getSelectionField = (field, selection) => {
+    const selectionField = [];
+    const yStart = selection.start.y, yEnd = selection.end.y;
+    const xStart = selection.start.x, xEnd = selection.end.x;
+    for (let y = yStart; y <= yEnd; y++) {
+      const row = [];
+      selectionField.push(row);
+      for (let x = xStart; x <= xEnd; x++) {
+        row[x - xStart] = field[y][x];
+      }
+    }
+    return selectionField;
+  };
+  var getIndex = (len, pos) => pos < 0 ? len + pos % len : pos % len;
+  var pasteFieldTo = (pastedField, cursor, options) => {
+    const { field, horCount, verCount } = options;
+    const selectionField = [];
+    const yStart = cursor.y;
+    const xStart = cursor.x;
+    const rowLength = pastedField.length;
+    const columnLength = pastedField[0].length;
+    for (let y = 0; y < rowLength; y++) {
+      const row = field[getIndex(verCount, yStart + y)];
+      for (let x = 0; x < columnLength; x++) {
+        if (!pastedField[y][x]) {
+          continue;
+        }
+        row[getIndex(horCount, xStart + x)] = pastedField[y][x];
+      }
+    }
+    return selectionField;
+  };
+  var clearFieldSelection = (field, selection) => {
+    const yStart = selection.start.y, yEnd = selection.end.y;
+    const xStart = selection.start.x, xEnd = selection.end.x;
+    for (let y = yStart; y <= yEnd; y++) {
+      for (let x = xStart; x <= xEnd; x++) {
+        field[y][x] = false;
+      }
+    }
+  };
+
   // src/game.ts
   var { canvas, canvasCont, updateCanvasStyle, changeCanvasColor } = createCanvas();
   var drawGame = () => renderCells(canvas.game.ctx, cfg.field);
   var drawGrid = () => cfg.cellSize > 1 && cfg.drawGrid && renderGrid(canvas.grid.ctx);
-  var getIndex = (len, pos) => pos > len ? 0 : pos < 0 ? len : pos;
+  var clearSelection = () => cfg.selection ? clearFieldSelection(cfg.field, cfg.selection) : cfg.resetField();
+  var getIndex2 = (len, pos) => pos > len ? 0 : pos < 0 ? len : pos;
   var getNeighbours = (field, x, y) => {
     let neighbours = field[y][x] ? -1 : 0;
     const bottom = y + 2, right = x + 2, fieldLen = field.length - 1;
     for (let i = y - 1; i < bottom; i++) {
-      const row = field[getIndex(fieldLen, i)];
+      const row = field[getIndex2(fieldLen, i)];
       const rowLen = row.length - 1;
       for (let j = x - 1; j < right; j++) {
-        const neighbour = row[getIndex(rowLen, j)];
+        const neighbour = row[getIndex2(rowLen, j)];
         neighbours += neighbour ? 1 : 0;
       }
     }
@@ -517,7 +576,7 @@
   var root = document.getElementById("root");
   var gameButton = createGameButton(game);
   var nextFrameButton = createCbButton(NEXT_FRAME_TEXT, nextFrame);
-  var clearButton = createCbButton(CLEAR_TEXT, voidExecutor(cfg.resetField, drawGame));
+  var clearButton = createCbButton(CLEAR_TEXT, voidExecutor(clearSelection, drawGame));
   var gameSpeed = createGameSpeedSlider();
   var verSizeInput = createNumberInput("\u0420\u0430\u0437\u043C\u0435\u0440 \u043F\u043E \u0432\u0435\u0440\u0442\u0438\u043A\u0430\u043B\u0438", "verCount", { onChange: cfg.resetField });
   var horSizeInput = createNumberInput("\u0420\u0430\u0437\u043C\u0435\u0440 \u043F\u043E \u0433\u043E\u0440\u0438\u0437\u043E\u043D\u0442\u0430\u043B\u0438", "horCount", { onChange: cfg.resetField });
@@ -598,13 +657,16 @@
 
   // src/input.ts
   var Input = class {
+    // TODO visualize aliases and shortcuts for better UX
     aliases = {
       toggleStop: ["Space"],
       select: ["MetaLeft", "ControlLeft"]
     };
     shortcuts = {
       copy: [["MetaLeft", "ControlLeft"], "KeyC"],
-      paste: [["MetaLeft", "ControlLeft"], "KeyV"]
+      paste: [["MetaLeft", "ControlLeft"], "KeyV"],
+      cut: [["MetaLeft", "ControlLeft"], "KeyX"],
+      clear: [["MetaLeft", "ControlLeft"], "KeyE"]
     };
     listeners = {};
     shortcutListeners = {};
@@ -716,52 +778,6 @@
   ], Input.prototype, "onKeyUp", 1);
   var input = new Input();
 
-  // src/utils/field.ts
-  var getCellCoord = (e, options) => {
-    const gridWidth = options.drawGrid ? options.gridWidth : 0;
-    const x = ~~(e.offsetX / (options.cellSize + gridWidth));
-    const y = ~~(e.offsetY / (options.cellSize + gridWidth));
-    return { x, y };
-  };
-  var toggleCell = (field, { x, y }, options, alive) => {
-    if (y === options.verCount) {
-      return;
-    }
-    const prevCellValue = field[y][x];
-    field[y][x] = alive === void 0 ? !field[y][x] : alive;
-    const isCellChange = prevCellValue !== field[y][x];
-    return isCellChange;
-  };
-  var getSelectionField = (field, selection) => {
-    const selectionField = [];
-    const yStart = selection.start.y, yEnd = selection.end.y;
-    const xStart = selection.start.x, xEnd = selection.end.x;
-    for (let y = yStart; y <= yEnd; y++) {
-      const row = [];
-      selectionField.push(row);
-      for (let x = xStart; x <= xEnd; x++) {
-        row[x - xStart] = field[y][x];
-      }
-    }
-    return selectionField;
-  };
-  var getIndex2 = (len, pos) => pos < 0 ? len + pos % len : pos % len;
-  var pasteFieldTo = (pastedField, cursor, options) => {
-    const { field, horCount, verCount } = options;
-    const selectionField = [];
-    const yStart = cursor.y;
-    const xStart = cursor.x;
-    const rowLength = pastedField.length;
-    const columnLength = pastedField[0].length;
-    for (let y = 0; y < rowLength; y++) {
-      const row = field[getIndex2(verCount, yStart + y)];
-      for (let x = 0; x < columnLength; x++) {
-        row[getIndex2(horCount, xStart + x)] = pastedField[y][x];
-      }
-    }
-    return selectionField;
-  };
-
   // src/listeners.ts
   var addListeners = () => {
     const uiCanvas = canvas.ui.el;
@@ -815,6 +831,21 @@
       if (pasteField && cellCoord) {
         pasteFieldTo(pasteField, cellCoord, cfg);
         drawGame();
+        cfg.setSelection(null);
+        renderUi(canvas.ui.ctx);
+      }
+    });
+    input.addShortcutListener("clear", () => {
+      clearSelection();
+      drawGame();
+    });
+    input.addShortcutListener("cut", () => {
+      if (cfg.selection) {
+        pasteField = getSelectionField(cfg.field, cfg.selection);
+        clearFieldSelection(cfg.field, cfg.selection);
+        cfg.setSelection(null);
+        drawGame();
+        renderUi(canvas.ui.ctx);
       }
     });
   };

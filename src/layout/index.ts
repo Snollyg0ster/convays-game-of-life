@@ -19,7 +19,7 @@ import {
   RANDOM_TEXT,
 } from "../consts/text";
 import { preloadedField } from "../consts/defaults";
-import { game, nextFrame, drawGame } from "../game";
+import { game, nextFrame, drawGame, clearSelection } from "../game";
 import { voidExecutor } from "../utils/common";
 
 export const buttonCont = document.createElement("div");
@@ -27,7 +27,7 @@ export const root = document.getElementById("root");
 
 const gameButton = createGameButton(game);
 const nextFrameButton = createCbButton(NEXT_FRAME_TEXT, nextFrame);
-const clearButton = createCbButton(CLEAR_TEXT, voidExecutor(cfg.resetField, drawGame));
+const clearButton = createCbButton(CLEAR_TEXT, voidExecutor(clearSelection, drawGame));
 const gameSpeed = createGameSpeedSlider();
 
 const verSizeInput = createNumberInput("Размер по вертикали", "verCount", {onChange: cfg.resetField});

@@ -3,10 +3,12 @@ import { cfg } from "./config";
 import { renderCells, renderGrid, renderUi } from "./render";
 import { createCanvas } from "./layout/elements";
 import { Observed, observe } from "./utils/decorators";
+import { clearFieldSelection } from "./utils/field";
 
 export const { canvas, canvasCont, updateCanvasStyle, changeCanvasColor } = createCanvas();
 export const drawGame = () => renderCells(canvas.game.ctx, cfg.field);
 export const drawGrid = () => cfg.cellSize > 1 && cfg.drawGrid && renderGrid(canvas.grid.ctx);
+export const clearSelection = () => cfg.selection ? clearFieldSelection(cfg.field, cfg.selection) : cfg.resetField();
 
 const getIndex = (len: number, pos: number) =>
   pos > len ? 0 : pos < 0 ? len : pos;

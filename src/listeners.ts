@@ -1,9 +1,9 @@
 import { cfg } from "./config";
-import { canvas, drawGame, game } from "./game";
+import { canvas, clearSelection, drawGame, game } from "./game";
 import { input } from "./input";
 import { renderUi } from "./render";
 import { Coord } from "./types";
-import { getCellCoord, getSelectionField, pasteFieldTo, toggleCell } from "./utils/field";
+import { clearFieldSelection, getCellCoord, getSelectionField, pasteFieldTo, toggleCell } from "./utils/field";
 
 export const addListeners = () => {
   const uiCanvas = canvas.ui.el;
@@ -64,6 +64,21 @@ export const addListeners = () => {
     if (pasteField && cellCoord) {
       pasteFieldTo(pasteField, cellCoord, cfg)
       drawGame();
+      cfg.setSelection(null);
+      renderUi(canvas.ui.ctx);
+    }
+  });
+  input.addShortcutListener('clear', () => {
+    clearSelection();
+    drawGame();
+  });
+  input.addShortcutListener('cut', () => {
+    if (cfg.selection) {
+      pasteField = getSelectionField(cfg.field, cfg.selection);
+      clearFieldSelection(cfg.field, cfg.selection)
+      cfg.setSelection(null);
+      drawGame();
+      renderUi(canvas.ui.ctx);
     }
   });
 };
