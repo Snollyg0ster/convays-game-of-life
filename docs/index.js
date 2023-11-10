@@ -657,27 +657,18 @@
 
   // src/input.ts
   var Input = class {
-    // TODO visualize aliases and shortcuts for better UX
-    aliases = {
-      toggleStop: ["Space"],
-      select: ["MetaLeft", "ControlLeft"]
-    };
-    shortcuts = {
-      copy: [["MetaLeft", "ControlLeft"], "KeyC"],
-      paste: [["MetaLeft", "ControlLeft"], "KeyV"],
-      cut: [["MetaLeft", "ControlLeft"], "KeyX"],
-      clear: [["MetaLeft", "ControlLeft"], "KeyE"]
-    };
+    constructor(aliases2, shortcuts2) {
+      this.aliases = aliases2;
+      this.shortcuts = shortcuts2;
+      this.codeAliases = this.initKeyAliases;
+      this.codeShortcuts = this.initCodeShortcuts;
+    }
     listeners = {};
     shortcutListeners = {};
     pressed = {};
     aliasesPressed = {};
     codeAliases;
     codeShortcuts;
-    constructor() {
-      this.codeAliases = this.initKeyAliases;
-      this.codeShortcuts = this.initCodeShortcuts;
-    }
     get initKeyAliases() {
       return Object.entries(this.aliases).reduce((acc, [alias, keys]) => {
         keys.forEach((key) => {
@@ -776,7 +767,17 @@
   __decorateClass([
     bind
   ], Input.prototype, "onKeyUp", 1);
-  var input = new Input();
+  var aliases = {
+    toggleStop: ["Space"],
+    select: ["MetaLeft", "ControlLeft"]
+  };
+  var shortcuts = {
+    copy: [["MetaLeft", "ControlLeft"], "KeyC"],
+    paste: [["MetaLeft", "ControlLeft"], "KeyV"],
+    cut: [["MetaLeft", "ControlLeft"], "KeyX"],
+    clear: [["MetaLeft", "ControlLeft"], "KeyE"]
+  };
+  var input = new Input(aliases, shortcuts);
 
   // src/listeners.ts
   var addListeners = () => {

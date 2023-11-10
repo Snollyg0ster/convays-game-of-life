@@ -1,27 +1,19 @@
+import { PartialRecord } from "./types";
 import { append } from "./utils/common";
 import { bind } from "./utils/decorators";
 
-class Input {
-    // TODO visualize aliases and shortcuts for better UX
-    private aliases = {
-        toggleStop: ['Space'],
-        select: ['MetaLeft', 'ControlLeft']
-    } satisfies Indexed<string[]>;
-    private shortcuts = {
-        copy: [['MetaLeft', 'ControlLeft'], 'KeyC'],
-        paste: [['MetaLeft', 'ControlLeft'], 'KeyV'],
-        cut: [['MetaLeft', 'ControlLeft'], 'KeyX'],
-        clear: [['MetaLeft', 'ControlLeft'], 'KeyE'],
-    } satisfies Indexed<(string | string[])[]>;
+type Aliases = Indexed<string[]>;
+type Shortcuts = Indexed<(string | string[])[]>;
 
+class Input<A extends Aliases, S extends Shortcuts>{
     private listeners: Indexed<Set<VoidFn>> = {}
-    private shortcutListeners: Indexed<Set<VoidFn>> = {}
+    private shortcutListeners: PartialRecord<keyof S, Set<VoidFn>> = {}
     private pressed: Indexed<boolean> = {};
-    private aliasesPressed: Indexed<boolean> = {};
-    private codeAliases: Indexed<string>;
+    private aliasesPressed: PartialRecord<keyof A, boolean> = {};
+    private codeAliases: Indexed<keyof A>;
     private codeShortcuts: Indexed<string[]>;
 
-    constructor() {
+    constructor(private aliases: A, private shortcuts: S) {
         this.codeAliases = this.initKeyAliases;
         this.codeShortcuts = this.initCodeShortcuts;
     }
@@ -148,4 +140,16 @@ class Input {
     }
 }
 
-export const input = new Input();
+// TODO visualize aliases and shortcuts for better UX
+const aliases = {
+    toggleStop: ['Space'],
+    select: ['MetaLeft', 'ControlLeft']
+} satisfies Aliases;
+const shortcuts = {
+    copy: [['MetaLeft', 'ControlLeft'], 'KeyC'],
+    paste: [['MetaLeft', 'ControlLeft'], 'KeyV'],
+    cut: [['MetaLeft', 'ControlLeft'], 'KeyX'],
+    clear: [['MetaLeft', 'ControlLeft'], 'KeyE'],
+} satisfies Shortcuts;
+
+export const input = new Input(aliases, shortcuts);
