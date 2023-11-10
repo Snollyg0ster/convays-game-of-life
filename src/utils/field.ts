@@ -67,9 +67,25 @@ export const pasteFieldTo = (
     const row = field[getIndex(verCount, yStart + y)];
 
     for (let x = 0; x < columnLength; x++) {
+      if (!pastedField[y][x]) {
+        continue;
+      }
+      
       row[getIndex(horCount, xStart + x)] = pastedField[y][x];
     }
   }
 
   return selectionField;
 };
+
+export const clearFieldSelection = (field: boolean[][], selection: Selection) => {
+  const yStart = selection.start.y, yEnd = selection.end.y;
+  const xStart = selection.start.x, xEnd = selection.end.x;
+
+  for (let y = yStart; y <= yEnd; y++) {
+
+      for (let x = xStart; x <= xEnd; x++) {
+          field[y][x] = false;
+      }
+  }
+}

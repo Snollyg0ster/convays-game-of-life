@@ -2,13 +2,16 @@ import { append } from "./utils/common";
 import { bind } from "./utils/decorators";
 
 class Input {
+    // TODO visualize aliases and shortcuts for better UX
     private aliases = {
         toggleStop: ['Space'],
         select: ['MetaLeft', 'ControlLeft']
     } satisfies Indexed<string[]>;
     private shortcuts = {
         copy: [['MetaLeft', 'ControlLeft'], 'KeyC'],
-        paste: [['MetaLeft', 'ControlLeft'], 'KeyV']
+        paste: [['MetaLeft', 'ControlLeft'], 'KeyV'],
+        cut: [['MetaLeft', 'ControlLeft'], 'KeyX'],
+        clear: [['MetaLeft', 'ControlLeft'], 'KeyE'],
     } satisfies Indexed<(string | string[])[]>;
 
     private listeners: Indexed<Set<VoidFn>> = {}
