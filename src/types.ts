@@ -64,3 +64,7 @@ type KeysOmit<T, V> = {
 }[keyof T];
 
 const jd: KeysOmit<NumberInputProps, number> = 'float'
+
+export type PartialRecord<K extends keyof any, T> = {
+    [P in K]?: T;
+};
